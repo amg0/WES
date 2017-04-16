@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+  <specVersion>
+    <major>1</major>
+    <minor>0</minor>
+  </specVersion>
+  <device>
+    <deviceType>urn:schemas-upnp-org:device:wes:1</deviceType>
+    <staticJson>D_WES_UI7.json</staticJson> 
+    <friendlyName>WES</friendlyName>
+    <manufacturer>Amg0</manufacturer>
+    <manufacturerURL>http://www.google.fr/</manufacturerURL>
+    <modelDescription>WES for Vera UI7</modelDescription>
+    <modelName>WES for Vera UI7</modelName>
+    <modelNumber>1</modelNumber>
+    <protocol>cr</protocol>
+    <handleChildren>1</handleChildren>
+	<serviceList>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:wes:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:wes1</serviceId>
+        <controlURL>/upnp/control/WES1</controlURL>
+        <eventSubURL>/upnp/event/WES1</eventSubURL>
+        <SCPDURL>S_WES.xml</SCPDURL>
+      </service>
+    </serviceList>
+    <implementationList>
+      <implementationFile>I_WES.xml</implementationFile>
+    </implementationList>
+  </device>
+</root>
+ 

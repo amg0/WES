@@ -1,2 +1,6 @@
 # WES
-Lua VERA plugin for Cartelectronic WES2 server
+VERA driver for Wes lares security system
+
+
+Features:
+- nothing
