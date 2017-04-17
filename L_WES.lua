@@ -368,12 +368,29 @@ local function WesHttpCall(lul_device,cmd)
 		return nil
 	end	
 	
+-- Accept:*/*
+-- Accept-Encoding:gzip, deflate, sdch
+-- Accept-Language:fr,fr-FR;q=0.8,en;q=0.6,en-US;q=0.4
+-- Authorization:Basic YWRtaW46d2Vz
+-- Cache-Control:no-cache
+-- Connection:keep-alive
+-- Host:192.168.1.31
+-- Pragma:no-cache
+-- User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36
 	local myheaders={}
 	if (credentials~=nil)then
 		local b64credential = "Basic ".. credentials
 		myheaders={
-			--["Accept"]="text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-			["Authorization"]=b64credential, --"Basic " + b64 encoded string of user:pwd
+			["Host"]="192.168.1.31",
+			["Accept"]="*/*",
+			["Accept-Encoding"]="gzip, deflate, sdch",
+			["Accept-Language"]="fr,fr-FR;q=0.8,en;q=0.6,en-US;q=0.4",
+			["Authorization"]="Basic YWRtaW46d2Vz", --"Basic " + b64 encoded string of user:pwd
+			-- ["Authorization"]=b64credential, --"Basic " + b64 encoded string of user:pwd
+			["Cache-Control"]="no-cache",
+			["Connection"]="keep-alive",
+			["Pragma"]="no-cache",
+			["User-Agent"]="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36",
 		}
 	end
 	local url = string.format ("http://%s/%s", ip_address,cmd)
@@ -388,11 +405,13 @@ local function WesHttpCall(lul_device,cmd)
 	})
 	
 	-- fail to connect
+	local data = table.concat(result)
 	if (request==nil) then
 		error(string.format("failed to connect to %s, http.request returned nil", ip_address))
 		return nil
 	elseif (code==401) then
 		warning(string.format("Access to WES requires a user/password: %d", code))
+		warning(data)
 		return "unauthorized"
 	elseif (code~=200) then
 		warning(string.format("http.request returned a bad code: %d", code))
