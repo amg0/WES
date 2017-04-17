@@ -484,13 +484,6 @@ local function registerHandlers()
 	luup.register_handler("myWES_Handler","WES_Handler")
 end
 
-function refreshEngineCB(lul_device)
-	lul_device = tonumber(lul_device)
-	debug(string.format("refreshEngineCB(%s)",lul_device))
-	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
-	luup.call_delay("refreshEngineCB",period,tostring(lul_device))
-end
-
 local function createChildren(lul_device)
 	debug(string.format("createChildren(%s)",lul_device))
 	-- for all children device, iterate
@@ -498,26 +491,43 @@ local function createChildren(lul_device)
 	luup.chdev.sync(lul_device, child_devices)
 end
 
-local function loadWesData(lul_device)
+local function loadWesData(lul_device,lomtab)
 	debug(string.format("loadWesData(%s)",lul_device))
 	return true
 end
 
+function refreshEngineCB(lul_device)
+	debug(string.format("refreshEngineCB(%s)",lul_device))
+	lul_device = tonumber(lul_device)
+	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
+
+	local xmldata = WesHttpCall(lul_device,"data.cgx")
+	if (xmldata ~= nil) then
+		local lomtab = lom.parse(xmldata)
+		return loadWesData(lul_device,lomtab)
+	else
+		warning(string.format("missing ip addr or credentials"))
+	end
+
+	luup.call_delay("refreshEngineCB",period,tostring(lul_device))
+end
+
 local function startEngine(lul_device)
 	debug(string.format("startEngine(%s)",lul_device))
-
+	lul_device = tonumber(lul_device)
+	local xmldata = WesHttpCall(lul_device,"data.cgx")
 	-- local xmldata = WesHttpCall(lul_device,"xml/zones/zonesDescription16IP.xml")
-	-- if (xmldata ~= nil) then
-		-- local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
-		-- local lomtab = lom.parse(xmldata)
+	if (xmldata ~= nil) then
+		local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
+		local lomtab = lom.parse(xmldata)
 		-- local zones = xpath.selectNodes(lomtab,"//zone/text()")
 		-- debug("zones:"..json.encode(zones))
 		-- createChildren(lul_device, zones )
-		-- luup.call_delay("refreshEngineCB",period,tostring(lul_device))
-		-- return loadWesData(lul_device)
-	-- else
-		-- warning(string.format("missing ip addr or credentials"))
-	-- end
+		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
+		return loadWesData(lul_device,lomtab)
+	else
+		warning(string.format("missing ip addr or credentials"))
+	end
 	return true
 end
 
