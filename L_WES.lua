@@ -538,6 +538,7 @@ function startupDeferred(lul_device)
 	local debugmode = getSetVariable(WES_SERVICE, "Debug", lul_device, "0")
 	local oldversion = getSetVariable(WES_SERVICE, "Version", lul_device, version)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
+	local credentials  = getSetVariable(WES_SERVICE, "Credentials", lul_device, "")
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then

@@ -65,14 +65,24 @@ function wes_Settings(deviceID) {
 					</div>																								\
 					<div class="form-group">																	\
 						<label for="wes-RefreshPeriod">Polling in sec</label>			\
-						<input type="number" min="1" max="15" class="form-control" id="wes-RefreshPeriod" placeholder="5">	\
+						<input type="number" min="1" max="600" class="form-control" id="wes-RefreshPeriod" placeholder="5">	\
 					</div>																								\																							\
 					<button id="wes-submit" type="submit" class="btn btn-default">Submit</button>	\
 				</form>                                                 \
       </div>                                                    \
     '		
 	set_panel_html(html);
-	
+	jQuery( "#wes-settings-form" ).on("submit", function(event) {
+		event.preventDefault();
+		var usr = jQuery( "#wes-username" ).val();
+		var pwd = jQuery( "#wes-pwd" ).val();
+		var poll = jQuery( "#wes-RefreshPeriod" ).val();
+		
+		var encode = btoa( "{0}:{1}".format(usr,pwd) );
+		saveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
+		saveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
+		return false;
+	})
 }
 
 
