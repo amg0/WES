@@ -161,41 +161,11 @@
 		"Function": "wes_Settings"
 	},
 	{
-		"Label": {
-			"lang_tag": "scenario",
-			"text": "Scenario"
-		},
-		"Position": "3",
-		"TabType": "javascript",
-		"ScriptName": "J_WES.js",
-		"Function": "wes_Scenario"
-	},
-	{
-		"Label": {
-			"lang_tag": "information",
-			"text": "Information"
-		},
-		"Position": "4",
-		"TabType": "javascript",
-		"ScriptName": "J_WES.js",
-		"Function": "wes_Information"
-	},
-	{
-		"Label": {
-			"lang_tag": "evenements",
-			"text": "Evenements"
-		},
-		"Position": "5",
-		"TabType": "javascript",
-		"ScriptName": "J_WES.js",
-		"Function": "wes_Events"
-	},
-	{
       "Label": {
         "lang_tag": "advanced",
         "text": "Advanced"
       },
-      "Position": "6",
+      "Position": "3",
       "TabType": "javascript",
       "ScriptName": "shared.js",
       "Function": "advanced_device"
@@ -205,7 +175,7 @@
         "lang_tag": "logs",
         "text": "Logs"
       },
-      "Position": "7",
+      "Position": "4",
       "TabType": "javascript",
       "ScriptName": "shared.js",
       "Function": "device_logs"
@@ -215,7 +185,7 @@
         "lang_tag": "notifications",
         "text": "Notifications"
       },
-      "Position": "8",
+      "Position": "5",
       "TabType": "javascript",
       "ScriptName": "shared.js",
       "Function": "device_notifications"
@@ -225,7 +195,7 @@
 			"lang_tag": "ui7_device_scenes",
 			"text": "Scenes"
 		},
-		"Position": "9",
+		"Position": "6",
 		"TabType": "javascript",
 		"ScriptName": "shared.js",
 		"Function": "device_scenes"
@@ -236,7 +206,7 @@
 			"text": "Donate"
 		},
 		"TopNavigationTab": "1",
-		"Position": "10",
+		"Position": "7",
 		"TabType": "javascript",
 		"ScriptName": "J_WES.js",
 		"Function": "wes_Donate"

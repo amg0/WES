@@ -518,7 +518,7 @@ local function startEngine(lul_device)
 	-- else
 		-- warning(string.format("missing ip addr or credentials"))
 	-- end
-	return false
+	return true
 end
 
 function startupDeferred(lul_device)
