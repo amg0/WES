@@ -17,6 +17,7 @@ local DEFAULT_REFRESH = 5
 local json = require("dkjson")
 local hostname = nil
 
+local mime = require('mime')
 local socket = require("socket")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
@@ -368,62 +369,20 @@ local function WesHttpCall(lul_device,cmd)
 		return nil
 	end	
 	
--- Accept:*/*
--- Accept-Encoding:gzip, deflate, sdch
--- Accept-Language:fr,fr-FR;q=0.8,en;q=0.6,en-US;q=0.4
--- Authorization:Basic YWRtaW46d2Vz
--- Cache-Control:no-cache
--- Connection:keep-alive
--- Host:192.168.1.31
--- Pragma:no-cache
--- User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36
-	local myheaders={}
-	if (credentials~=nil)then
-		local b64credential = "Basic ".. credentials
-		myheaders={
-			["Host"]="192.168.1.31",
-			["Accept"]="*/*",
-			["Accept-Encoding"]="gzip, deflate, sdch",
-			["Accept-Language"]="fr,fr-FR;q=0.8,en;q=0.6,en-US;q=0.4",
-			["Authorization"]="Basic YWRtaW46d2Vz", --"Basic " + b64 encoded string of user:pwd
-			-- ["Authorization"]=b64credential, --"Basic " + b64 encoded string of user:pwd
-			["Cache-Control"]="no-cache",
-			["Connection"]="keep-alive",
-			["Pragma"]="no-cache",
-			["User-Agent"]="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36",
-		}
-	end
 	local url = string.format ("http://%s/%s", ip_address,cmd)
 	debug("url:"..url)
-	debug("myheaders:"..json.encode(myheaders))
 	
-	local result = {}
-	local request, code = http.request({
-		url = url,
-		headers = myheaders,
-		sink = ltn12.sink.table(result)
-	})
-	
-	-- fail to connect
-	local data = table.concat(result)
-	if (request==nil) then
-		error(string.format("failed to connect to %s, http.request returned nil", ip_address))
-		return nil
-	elseif (code==401) then
-		warning(string.format("Access to WES requires a user/password: %d", code))
-		warning(data)
-		return "unauthorized"
-	elseif (code~=200) then
-		warning(string.format("http.request returned a bad code: %d", code))
-		return nil
+	local str = mime.unb64(credentials)
+	local parts = str:split(":")
+	local code,content,httpStatusCode  = luup.inet.wget(url,60,parts[1],parts[2])
+	if (code==0) then
+		-- success
+		debug(string.format("content:%s",content))	
+		return content
 	end
-	
-	-- everything looks good
-	local data = table.concat(result)
-	debug(string.format("request:%s",request))	
-	debug(string.format("code:%s",code))	
-	debug(string.format("data:%s",data))	
-	return data
+	-- failure
+	debug(string.format("failure=> code:%s httpStatusCode:%s",httpStatusCode))	
+	return nil
 end
 
 ------------------------------------------------------------------------------------------------
@@ -510,8 +469,20 @@ local function createChildren(lul_device)
 	luup.chdev.sync(lul_device, child_devices)
 end
 
-local function loadWesData(lul_device,lomtab)
-	debug(string.format("loadWesData(%s)",lul_device))
+
+local xmlmap = {
+	["/data/info/firmware/text()"] = { variable="Firmware" , default="" }
+}
+
+local function loadWesData(lul_device,xmldata)
+	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
+	local lomtab = lom.parse(xmldata)
+	for k,v in pairs(xmlmap) do
+		local nodes = xpath.selectNodes(lomtab,k) 
+		-- debug(string.format("nodes:%s",json.encode(nodes)))
+		local value =  nodes[1] or v.default
+		setVariableIfChanged(WES_SERVICE, v.variable, value, lul_device)
+	end
 	return true
 end
 
@@ -522,8 +493,7 @@ function refreshEngineCB(lul_device)
 
 	local xmldata = WesHttpCall(lul_device,"data.cgx")
 	if (xmldata ~= nil) then
-		local lomtab = lom.parse(xmldata)
-		return loadWesData(lul_device,lomtab)
+		return loadWesData(lul_device,xmldata)
 	else
 		warning(string.format("missing ip addr or credentials"))
 	end
@@ -538,12 +508,11 @@ local function startEngine(lul_device)
 	-- local xmldata = WesHttpCall(lul_device,"xml/zones/zonesDescription16IP.xml")
 	if (xmldata ~= nil) then
 		local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
-		local lomtab = lom.parse(xmldata)
 		-- local zones = xpath.selectNodes(lomtab,"//zone/text()")
 		-- debug("zones:"..json.encode(zones))
 		-- createChildren(lul_device, zones )
 		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
-		return loadWesData(lul_device,lomtab)
+		return loadWesData(lul_device,xmldata)
 	else
 		warning(string.format("missing ip addr or credentials"))
 	end

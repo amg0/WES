@@ -72,6 +72,11 @@ function wes_Settings(deviceID) {
       </div>                                                    \
     '		
 	set_panel_html(html);
+	var arr = atob(credentials).split(":");
+	jQuery( "#wes-username" ).val(arr[0]);
+	jQuery( "#wes-pwd" ).val(arr[1]);
+	jQuery( "#wes-RefreshPeriod" ).val(poll);
+		
 	jQuery( "#wes-settings-form" ).on("submit", function(event) {
 		event.preventDefault();
 		var usr = jQuery( "#wes-username" ).val();
