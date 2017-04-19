@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.1"
+local version = "v0.3"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local json = require("dkjson")
@@ -27,6 +27,29 @@ local xpath = require("xpath")
 -- local mime = require("mime")
 -- local https = require ("ssl.https")
 -- local modurl = require "socket.url"
+
+local xmlmap = {
+	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
+	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
+	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="RELAIS%s" , default=""},
+}
+
+local childmap = {
+	["SONDE%s"] = { 
+		devtype="urn:schemas-micasaverde-com:device:TemperatureSensor:1", 
+		devfile="D_TemperatureSensor1.xml", 
+		name="SONDE %s",
+		map="TempSensors"
+	},
+	["RELAIS%s"] = { 
+		devtype="urn:schemas-upnp-org:device:BinaryLight:1", 
+		devfile="D_BinaryLight1.xml", 
+		name="RELAIS %s",
+		map={1,2}
+	}
+
+}
+
 
 ------------------------------------------------
 -- Debug --
@@ -464,33 +487,39 @@ end
 
 local function createChildren(lul_device)
 	debug(string.format("createChildren(%s)",lul_device))
-	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
 
 	-- for all children device, iterate
     local child_devices = luup.chdev.start(lul_device);
 	
-	local devtype =  "urn:schemas-micasaverde-com:device:TemperatureSensor:1"
-	local devfile =  "D_TemperatureSensor1.xml"
-	for k,v in pairs(tempsensors:split(",")) do
-		local i = tonumber(v)
-		luup.chdev.append(
-			lul_device, child_devices, 
-			"SONDE"..i, "SONDE "..i, 
-			devtype,devfile, 
-			"", "", 
-			false		-- embedded
-			)		
+	-- iterate through type of child
+	for kchild,child in pairs(childmap) do
+		-- get the map ( csv list of numbers )
+		local map={}
+		
+		-- child.map is either directly a table, or a name of a variable containng a csv string
+		if ( type(child.map) == "table") then
+			map = child.map
+		else
+			local csv  = getSetVariable(WES_SERVICE, child.map, lul_device, "")
+			map = csv:split(",")
+		end
+		
+		for k,v in pairs(map) do
+			local i = tonumber(v)
+			luup.chdev.append(
+				lul_device, child_devices, 
+				string.format(kchild,i),			-- children map index is altid 
+				string.format(child.name,i), 	-- children map name attribute is device name 
+				child.devtype,						-- children device type
+				child.devfile, 						-- children devfile
+				"", "", 
+				false									-- not embedded
+				)		
+		end
 	end
 	
 	luup.chdev.sync(lul_device, child_devices)
 end
-
-
-local xmlmap = {
-	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
-	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
-}
-
 
 function getCurrentTemperature(lul_device)
 	lul_device = tonumber(lul_device)
@@ -508,6 +537,13 @@ local function loadWesData(lul_device,xmldata)
 		for i,n in pairs(nodes) do
 			-- debug(string.format("i=%s n=%s",i,json.encode(n)))
 			local value = n or v.default
+			if (value=="OFF") then 
+				value = 0
+			else
+				if (value=="ON") then
+					value = 1
+				end
+			end
 			if (v.child~=nil) then
 				child_device = findChild( lul_device, string.format(v.child,i))
 				if (child_device~=nil) then
@@ -528,11 +564,12 @@ function refreshEngineCB(lul_device)
 
 	local xmldata = WesHttpCall(lul_device,"data.cgx")
 	if (xmldata ~= nil) then
-		return loadWesData(lul_device,xmldata)
+		loadWesData(lul_device,xmldata)
 	else
 		warning(string.format("missing ip addr or credentials"))
 	end
 
+	debug(string.format("programming next refreshEngineCB(%s) in %s",lul_device,period))
 	luup.call_delay("refreshEngineCB",period,tostring(lul_device))
 end
 
