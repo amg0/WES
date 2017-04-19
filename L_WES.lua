@@ -491,6 +491,13 @@ local xmlmap = {
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
 }
 
+
+function getCurrentTemperature(lul_device)
+	lul_device = tonumber(lul_device)
+	debug(string.format("getCurrentTemperature(%d)",lul_device))
+	return luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
+end
+
 local function loadWesData(lul_device,xmldata)
 	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
 	local lomtab = lom.parse(xmldata)
