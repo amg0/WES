@@ -464,24 +464,52 @@ end
 
 local function createChildren(lul_device)
 	debug(string.format("createChildren(%s)",lul_device))
+	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
+
 	-- for all children device, iterate
     local child_devices = luup.chdev.start(lul_device);
+	
+	local devtype =  "urn:schemas-micasaverde-com:device:TemperatureSensor:1"
+	local devfile =  "D_TemperatureSensor1.xml"
+	for k,v in pairs(tempsensors:split(",")) do
+		local i = tonumber(v)
+		luup.chdev.append(
+			lul_device, child_devices, 
+			"SONDE"..i, "SONDE "..i, 
+			devtype,devfile, 
+			"", "", 
+			false		-- embedded
+			)		
+	end
+	
 	luup.chdev.sync(lul_device, child_devices)
 end
 
 
 local xmlmap = {
-	["/data/info/firmware/text()"] = { variable="Firmware" , default="" }
+	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
+	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
 }
 
 local function loadWesData(lul_device,xmldata)
 	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
 	local lomtab = lom.parse(xmldata)
 	for k,v in pairs(xmlmap) do
+		-- debug(string.format("k=%s v=%s",k,json.encode(v)))
 		local nodes = xpath.selectNodes(lomtab,k) 
 		-- debug(string.format("nodes:%s",json.encode(nodes)))
-		local value =  nodes[1] or v.default
-		setVariableIfChanged(WES_SERVICE, v.variable, value, lul_device)
+		for i,n in pairs(nodes) do
+			-- debug(string.format("i=%s n=%s",i,json.encode(n)))
+			local value = n or v.default
+			if (v.child~=nil) then
+				child_device = findChild( lul_device, string.format(v.child,i))
+				if (child_device~=nil) then
+					setVariableIfChanged(v.service, v.variable, value, child_device)
+				end
+			else
+				setVariableIfChanged(WES_SERVICE, v.variable, value, lul_device)
+			end
+		end
 	end
 	return true
 end
@@ -527,6 +555,7 @@ function startupDeferred(lul_device)
 	local oldversion = getSetVariable(WES_SERVICE, "Version", lul_device, version)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 	local credentials  = getSetVariable(WES_SERVICE, "Credentials", lul_device, "")
+	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then
@@ -554,7 +583,8 @@ function startupDeferred(lul_device)
 	
 	-- start handlers
 	registerHandlers()
-
+	createChildren(lul_device)
+	
 	-- start engine
 	local success = false
 	success = startEngine(lul_device)
