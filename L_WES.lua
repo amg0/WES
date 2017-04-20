@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.3"
+local version = "v0.4"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local json = require("dkjson")
@@ -31,7 +31,7 @@ local xpath = require("xpath")
 local xmlmap = {
 	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
-	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="RELAIS%s" , default=""},
+	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
 }
 
 local childmap = {
@@ -41,7 +41,8 @@ local childmap = {
 		name="SONDE %s",
 		map="TempSensors"
 	},
-	["RELAIS%s"] = { 
+	-- altid is the relay ID on the WES
+	["rl%s"] = { 
 		devtype="urn:schemas-upnp-org:device:BinaryLight:1", 
 		devfile="D_BinaryLight1.xml", 
 		name="RELAIS %s",
@@ -373,15 +374,28 @@ local function findChild( lul_parent, altid )
 	return nil,nil
 end
 
+local function getParent(lul_device)
+	return luup.devices[lul_device].device_num_parent
+end
+
+local function getRoot(lul_device)
+	while( getParent(lul_device)>0 ) do
+		lul_device = getParent(lul_device)
+	end
+	return lul_device
+end
 ------------------------------------------------
 -- Communication TO WES system
 ------------------------------------------------
-local function WesHttpCall(lul_device,cmd)
+local function WesHttpCall(lul_device,cmd,data)
 	lul_device = tonumber(lul_device)
-	debug(string.format("WesHttpCall(%d,%s)",lul_device,cmd))
+	local lul_root = getRoot(lul_device)
+	data = data  or ""
+	debug(string.format("WesHttpCall(%d,%s,%s) , root:%s",lul_device,cmd,data,lul_root))
 
-	local credentials= getSetVariable(WES_SERVICE,"Credentials", lul_device, "")
-	local ip_address = luup.attr_get ('ip', lul_device )
+	-- get parameter from root device
+	local credentials= getSetVariable(WES_SERVICE,"Credentials", lul_root, "")
+	local ip_address = luup.attr_get ('ip', lul_root )
 	
 	if (ipaddr=="") then
 		warning(string.format("IPADDR is not initialized"))
@@ -392,7 +406,7 @@ local function WesHttpCall(lul_device,cmd)
 		return nil
 	end	
 	
-	local url = string.format ("http://%s/%s", ip_address,cmd)
+	local url = string.format ("http://%s/%s?%s", ip_address,cmd,data)
 	debug("url:"..url)
 	
 	local str = mime.unb64(credentials)
@@ -509,16 +523,41 @@ local function createChildren(lul_device)
 			luup.chdev.append(
 				lul_device, child_devices, 
 				string.format(kchild,i),			-- children map index is altid 
-				string.format(child.name,i), 	-- children map name attribute is device name 
+				string.format(child.name,i), 		-- children map name attribute is device name 
 				child.devtype,						-- children device type
 				child.devfile, 						-- children devfile
 				"", "", 
-				false									-- not embedded
+				false								-- not embedded
 				)		
 		end
 	end
 	
 	luup.chdev.sync(lul_device, child_devices)
+end
+
+function UserSetPowerTarget(lul_device,newTargetValue)
+	lul_device = tonumber(lul_device)
+	debug(string.format("UserSetPowerTarget(%s,%s)",lul_device,newTargetValue))
+	local status = luup.variable_get("urn:upnp-org:serviceId:SwitchPower1", "Status", lul_device)
+	if (status ~= newTargetValue) then
+		local val = "ON";
+		if (newTargetValue=="0") then
+			val = "OFF";
+		end
+		-- altid is the relay ID on the WES
+		local childid = luup.devices[lul_device].id;
+		luup.variable_set("urn:upnp-org:serviceId:SwitchPower1", "Status", newTargetValue, lul_device)
+		local xmldata = WesHttpCall(lul_device,"RL.cgx",childid.."="..val)
+	else
+		debug(string.format("UserSetPowerTarget(%s,%s) - same status, ignoring",lul_device,newTargetValue))
+	end
+end
+
+function UserToggleState(lul_device)
+	debug(string.format("UserToggleState(%s)",lul_device))
+	local status = luup.variable_get("urn:upnp-org:serviceId:SwitchPower1", "Status", lul_device)
+	status = 1-tonumber(status)
+	UserSetPowerTarget(lul_device,tostring(status))
 end
 
 function getCurrentTemperature(lul_device)
