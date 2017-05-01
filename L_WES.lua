@@ -69,7 +69,13 @@ local childmap = {
 		devfile="D_BinaryLight1.xml",
 		name="SWITCH %s",
 		map="VirtualSwitches"	-- user choice in a CSV string 1 to 8 ex:  2,3
-	}
+	},
+	["tic%s"] = {
+		devtype="urn:schemas-micasaverde-com:device:PowerMeter:1",
+		devfile="D_PowerMeter1.xml",
+		name="TIC %s",
+		map={1,2} -- hard coded dev 1 and 2
+	}	
 }
 
 
