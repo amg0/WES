@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.4"
+local version = "v0.5"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local json = require("dkjson")
@@ -32,6 +32,7 @@ local xmlmap = {
 	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
+	["/data/switch_virtuel/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
 	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
 }
 
@@ -47,19 +48,25 @@ local childmap = {
 		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
 		devfile="D_BinaryLight1.xml",
 		name="RELAIS %s",
-		map={1,2}
+		map={1,2}	-- hard coded dev 1 and 2
 	},
 	["in%s"] = {
 		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
 		devfile="D_BinaryLight1.xml",
 		name="ENTREE %s",
-		map={1,2}
+		map={1,2}	-- hard coded dev 1 and 2
+	},
+	["vs%s"] = {
+		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
+		devfile="D_BinaryLight1.xml",
+		name="SWITCH %s",
+		map="SwitchVirtuals"	-- user choice in a CSV string 1 to 8 ex:  2,3
 	},
 	["tic%s"] = {
 		devtype="urn:schemas-micasaverde-com:device:PowerMeter:1",
 		devfile="D_PowerMeter1.xml",
 		name="TIC %s",
-		map={1,2}
+		map={1,2} -- hard coded dev 1 and 2
 	}
 }
 
@@ -492,23 +499,6 @@ function myWES_Handler(lul_request, lul_parameters, lul_outputformat)
 	return (lul_html or "") , mime_type
 end
 
-
-------------------------------------------------
--- UPNP actions Sequence
-------------------------------------------------
-
-local function setDebugMode(lul_device,newDebugMode)
-	lul_device = tonumber(lul_device)
-	newDebugMode = tonumber(newDebugMode) or 0
-	debug(string.format("setDebugMode(%d,%d)",lul_device,newDebugMode))
-	luup.variable_set(WES_SERVICE, "Debug", newDebugMode, lul_device)
-	if (newDebugMode==1) then
-		DEBUG_MODE=true
-	else
-		DEBUG_MODE=false
-	end
-end
-
 ------------------------------------------------
 -- STARTUP Sequence
 ------------------------------------------------
@@ -630,8 +620,9 @@ local function loadWesData(lul_device,xmldata)
 	return true
 end
 
-function refreshEngineCB(lul_device)
-	debug(string.format("refreshEngineCB(%s)",lul_device))
+function refreshEngineCB(lul_device,norefresh)
+	norefresh = norefresh or false
+	debug(string.format("refreshEngineCB(%s,%s)",lul_device,tostring(norefresh)))
 	lul_device = tonumber(lul_device)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 
@@ -643,7 +634,30 @@ function refreshEngineCB(lul_device)
 	end
 
 	debug(string.format("programming next refreshEngineCB(%s) in %s",lul_device,period))
-	luup.call_delay("refreshEngineCB",period,tostring(lul_device))
+	if (norefresh==false) then
+		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
+	end
+end
+
+------------------------------------------------
+-- UPNP actions Sequence
+------------------------------------------------
+local function setDebugMode(lul_device,newDebugMode)
+	lul_device = tonumber(lul_device)
+	newDebugMode = tonumber(newDebugMode) or 0
+	debug(string.format("setDebugMode(%d,%d)",lul_device,newDebugMode))
+	luup.variable_set(WES_SERVICE, "Debug", newDebugMode, lul_device)
+	if (newDebugMode==1) then
+		DEBUG_MODE=true
+	else
+		DEBUG_MODE=false
+	end
+end
+
+local function refreshData(lul_device)
+	lul_device = tonumber(lul_device)
+	debug(string.format("refreshData(%d)",lul_device))
+	refreshEngineCB(lul_device,true)
 end
 
 local function startEngine(lul_device)
@@ -673,6 +687,8 @@ function startupDeferred(lul_device)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 	local credentials  = getSetVariable(WES_SERVICE, "Credentials", lul_device, "")
 	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
+	local switchvirtuals  = getSetVariable(WES_SERVICE, "SwitchVirtuals", lul_device, "")
+
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then

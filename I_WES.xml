@@ -15,6 +15,15 @@
 		</action>
 	
 		<action>
+			<serviceId>urn:upnp-org:serviceId:wes1</serviceId>
+			<name>Refresh</name>
+			<job>
+			refreshData(lul_device)
+			return 4,0
+			</job>
+		</action>
+
+		<action>
 		  <serviceId>urn:upnp-org:serviceId:TemperatureSensor1</serviceId>
 		  <name>GetCurrentTemperature</name>
 		  <run>
@@ -29,6 +38,7 @@
 				UserSetPowerTarget(lul_device,lul_settings.newTargetValue)
 		  </run>
 		</action>
+		
 		<action>
 		  <serviceId>urn:micasaverde-com:serviceId:HaDevice1</serviceId>
 		  <name>ToggleState</name>

@@ -23,5 +23,10 @@
                 </argument>
             </argumentList>
         </action>
+        <action>
+            <name>Refresh</name>
+            <argumentList>
+            </argumentList>
+		</action>
 	</actionList>
 </scpd>
