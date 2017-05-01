@@ -1,0 +1,151 @@
+t <?xml version="1.0" encoding="utf-8" ?>
+t <data>
+t <info>
+c g d <date>%02d/%02d/%02d</date>
+c h h <time>%02d:%02d</time>
+c v v <firmware>%s</firmware>
+t </info>
+t <tic1>
+c e a <ADCO>%s</ADCO>
+c eo1 <OPTARIF>%s.</OPTARIF>
+c e c <ISOUSC>%d</ISOUSC>
+c T p <PTEC>%s</PTEC>
+c i p <PAP>%d</PAP>
+c ii0 <IINST>%d</IINST>
+c ii1 <IINST1>%d</IINST1>
+c ii2 <IINST2>%d</IINST2>
+c ii3 <IINST3>%d</IINST3>
+c im0 <IMAX>%d</IMAX>
+c im1 <IMAX1>%d</IMAX1>
+c im2 <IMAX2>%d</IMAX2>
+c im3 <IMAX3>%d</IMAX3>
+c Te1 <PEJP>%d</PEJP>
+c Td1 <DEMAIN>%s</DEMAIN>
+c Tb1 <BASE>%s</BASE>
+c Tc2 <HCHC>%s</HCHC>
+c Tc1 <HCHP>%s</HCHP>
+c Tj1 <EJPHN>%s</EJPHN>
+c Tj2 <EJPHPM>%s</EJPHPM>
+c Tr1 <BBRHCJB>%s</BBRHCJB>
+c Tr2 <BBRHPJB>%s</BBRHPJB>
+c Tr3 <BBRHCJW>%s</BBRHCJW>
+c Tr4 <BBRHPJW>%s</BBRHPJW>
+c Tr5 <BBRHCJR>%s</BBRHCJR>
+c Tr6 <BBRHPJR>%s</BBRHPJR>
+t </tic1>
+t <tic2>
+c e A <ADCO>%s</ADCO>
+c eo2 <OPTARIF>%s.</OPTARIF>
+c e C <ISOUSC>%d</ISOUSC>
+c T P <PTEC>%s</PTEC>
+c I p <PAP>%d</PAP>
+c Ii0 <IINST>%d</IINST>
+c Ii1 <IINST1>%d</IINST1>
+c Ii2 <IINST2>%d</IINST2>
+c Ii3 <IINST3>%d</IINST3>
+c Im0 <IMAX>%d</IMAX>
+c Im1 <IMAX1>%d</IMAX1>
+c Im2 <IMAX2>%d</IMAX2>
+c Im3 <IMAX3>%d</IMAX3>
+c Te2 <PEJP>%d</PEJP>
+c Td2 <DEMAIN>%s</DEMAIN>
+c TB1 <BASE>%s</BASE>
+c TC2 <HCHC>%s</HCHC>
+c TC1 <HCHP>%s</HCHP>
+c TJ1 <EJPHN>%s</EJPHN>
+c TJ2 <EJPHPM>%s</EJPHPM>
+c TR1 <BBRHCJB>%s</BBRHCJB>
+c TR2 <BBRHPJB>%s</BBRHPJB>
+c TR3 <BBRHCJW>%s</BBRHCJW>
+c TR4 <BBRHPJW>%s</BBRHPJW>
+c TR5 <BBRHCJR>%s</BBRHCJR>
+c TR6 <BBRHPJR>%s</BBRHPJR>
+t </tic2>
+t <impulsion>
+c pp1 <PULSE1>%d</PULSE1>
+c pIU1<INDEX1>%.0f</INDEX1>
+c pp2 <PULSE2>%d</PULSE2>
+c pIU2<INDEX2>%.0f</INDEX2>
+c pp3 <PULSE3>%d</PULSE3>
+c pIU3<INDEX3>%.0f</INDEX3>
+c pp4 <PULSE4>%d</PULSE4>
+c pIU4<INDEX4>%.0f</INDEX4>
+t </impulsion>
+t <pince>
+c P A1 <I1>%.02f</I1>
+c P W1 <INDEX1>%d</INDEX1>
+c P A2 <I2>%.02f</I2>
+c P W2 <INDEX2>%d</INDEX2>
+c P A3 <I3>%.02f</I3>
+c P W3 <INDEX3>%d</INDEX3>
+c P A4 <I4>%.02f</I4>
+c P W4 <INDEX4>%d</INDEX4>
+t </pince>
+t <temp>
+c W0T0 <SONDE1>%.01f</SONDE1>
+c W0T1 <SONDE2>%.01f</SONDE2>
+c W0T2 <SONDE3>%.01f</SONDE3>
+c W0T3 <SONDE4>%.01f</SONDE4>
+c W0T4 <SONDE5>%.01f</SONDE5>
+c W0T5 <SONDE6>%.01f</SONDE6>
+c W0T6 <SONDE7>%.01f</SONDE7>
+c W0T7 <SONDE8>%.01f</SONDE8>
+c W0T8 <SONDE9>%.01f</SONDE9>
+c W0T9 <SONDE10>%.01f</SONDE10>
+c W1T0 <SONDE11>%.01f</SONDE11>
+c W1T1 <SONDE12>%.01f</SONDE12>
+c W1T2 <SONDE13>%.01f</SONDE13>
+c W1T3 <SONDE14>%.01f</SONDE14>
+c W1T4 <SONDE15>%.01f</SONDE15>
+c W1T5 <SONDE16>%.01f</SONDE16>
+c W1T6 <SONDE17>%.01f</SONDE17>
+c W1T7 <SONDE18>%.01f</SONDE18>
+c W1T8 <SONDE19>%.01f</SONDE19>
+c W1T9 <SONDE20>%.01f</SONDE20>
+c W2T0 <SONDE21>%.01f</SONDE21>
+c W2T1 <SONDE22>%.01f</SONDE22>
+c W2T2 <SONDE23>%.01f</SONDE23>
+c W2T3 <SONDE24>%.01f</SONDE24>
+c W2T4 <SONDE25>%.01f</SONDE25>
+c W2T5 <SONDE26>%.01f</SONDE26>
+c W2T6 <SONDE27>%.01f</SONDE27>
+c W2T7 <SONDE28>%.01f</SONDE28>
+c W2T8 <SONDE29>%.01f</SONDE29>
+c W2T9 <SONDE30>%.01f</SONDE30>
+t </temp>
+t <relais>
+c o R1 <RELAIS1>%s</RELAIS1>
+c o R2 <RELAIS2>%s</RELAIS2>
+t </relais>
+t <entree>
+c l	E1 <ENTREE1>%d</ENTREE1>
+c l	E2 <ENTREE2>%d</ENTREE2>
+t </entree>
+t <analogique>
+c l A1 <AD1>%d</AD1>
+c l A2 <AD2>%d</AD2>
+c l A3 <AD3>%d</AD3>
+c l A4 <AD4>%d</AD4>
+t </analogique>
+t <switch_virtuel>
+c l	V1 <SWITCH1>%d</SWITCH1>
+c l	V2 <SWITCH2>%d</SWITCH2>
+c l	V3 <SWITCH3>%d</SWITCH3>
+c l	V4 <SWITCH4>%d</SWITCH4>
+c l	V5 <SWITCH5>%d</SWITCH5>
+c l	V6 <SWITCH6>%d</SWITCH6>
+c l	V7 <SWITCH7>%d</SWITCH7>
+c l	V8 <SWITCH8>%d</SWITCH8>
+t </switch_virtuel>
+t <variables>
+c Vv1 <VARIABLE1>%.02f</VARIABLE1>
+c Vv2 <VARIABLE2>%.02f</VARIABLE2>
+c Vv3 <VARIABLE3>%.02f</VARIABLE3>
+c Vv4 <VARIABLE4>%.02f</VARIABLE4>
+c Vv5 <VARIABLE5>%.02f</VARIABLE5>
+c Vv6 <VARIABLE6>%.02f</VARIABLE6>
+c Vv7 <VARIABLE7>%.02f</VARIABLE7>
+c Vv8 <VARIABLE8>%.02f</VARIABLE8>
+t </variables>
+c WRo
+t </data>

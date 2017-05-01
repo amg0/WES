@@ -1,11 +1,11 @@
 -- // This program is free software: you can redistribute it and/or modify
--- // it under the condition that it is for private or home useage and 
+-- // it under the condition that it is for private or home useage and
 -- // this whole comment is reproduced in the source code file.
 -- // Commercial utilisation is not authorized without the appropriate
 -- // written agreement from amg0 / alexis . mermet @ gmail . com
 -- // This program is distributed in the hope that it will be useful,
 -- // but WITHOUT ANY WARRANTY; without even the implied warranty of
--- // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE . 
+-- // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE .
 local MSG_CLASS = "WES"
 local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
@@ -32,23 +32,35 @@ local xmlmap = {
 	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
+	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
 }
 
 local childmap = {
-	["SONDE%s"] = { 
-		devtype="urn:schemas-micasaverde-com:device:TemperatureSensor:1", 
-		devfile="D_TemperatureSensor1.xml", 
+	["SONDE%s"] = {
+		devtype="urn:schemas-micasaverde-com:device:TemperatureSensor:1",
+		devfile="D_TemperatureSensor1.xml",
 		name="SONDE %s",
 		map="TempSensors"
 	},
 	-- altid is the relay ID on the WES
-	["rl%s"] = { 
-		devtype="urn:schemas-upnp-org:device:BinaryLight:1", 
-		devfile="D_BinaryLight1.xml", 
+	["rl%s"] = {
+		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
+		devfile="D_BinaryLight1.xml",
 		name="RELAIS %s",
 		map={1,2}
+	},
+	["in%s"] = {
+		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
+		devfile="D_BinaryLight1.xml",
+		name="ENTREE %s",
+		map={1,2}
+	},
+	["tic%s"] = {
+		devtype="urn:schemas-micasaverde-com:device:PowerMeter:1",
+		devfile="D_PowerMeter1.xml",
+		name="TIC %s",
+		map={1,2}
 	}
-
 }
 
 
@@ -83,27 +95,33 @@ end
 
 ---code from lolodomo DNLA plugin
 local function xml_decode(val)
-      return val:gsub("&#38;", '&')
-                :gsub("&#60;", '<')
-                :gsub("&#62;", '>')
-                :gsub("&#34;", '"')
-                :gsub("&#39;", "'")
-                :gsub("&lt;", "<")
-                :gsub("&gt;", ">")
-                :gsub("&quot;", '"')
-                :gsub("&apos;", "'")
-                :gsub("&amp;", "&")
+	  return val:gsub("&#38;", '&')
+				:gsub("&#60;", '<')
+				:gsub("&#62;", '>')
+				:gsub("&#34;", '"')
+				:gsub("&#39;", "'")
+				:gsub("&lt;", "<")
+				:gsub("&gt;", ">")
+				:gsub("&quot;", '"')
+				:gsub("&apos;", "'")
+				:gsub("&amp;", "&")
 end
 
 ---code from lolodomo DNLA plugin
 local function xml_encode(val)
-      return val:gsub("&", "&amp;")
-                :gsub("<", "&lt;")
-                :gsub(">", "&gt;")
-                :gsub('"', "&quot;")
-                :gsub("'", "&apos;")
+	  return val:gsub("&", "&amp;")
+				:gsub("<", "&lt;")
+				:gsub(">", "&gt;")
+				:gsub('"', "&quot;")
+				:gsub("'", "&apos;")
 end
-	
+
+local function extractTagValue(xml)
+	local pattern = "<(.*)>(.*)</.*>"
+	local resa,resb = string.match( xml, pattern)
+	return resa,resb
+end
+
 local function findTHISDevice()
 	for k,v in pairs(luup.devices) do
 		if( v.device_type == devicetype ) then
@@ -220,11 +238,11 @@ local function getIP()
 	-- local ip = stdout:read("*a")
 	-- stdout:close()
 	-- return ip
-	local mySocket = socket.udp ()  
-	mySocket:setpeername ("42.42.42.42", "424242")  -- arbitrary IP/PORT  
-	local ip = mySocket:getsockname ()  
-	mySocket: close()  
-	return ip or "127.0.0.1" 
+	local mySocket = socket.udp ()
+	mySocket:setpeername ("42.42.42.42", "424242")  -- arbitrary IP/PORT
+	local ip = mySocket:getsockname ()
+	mySocket: close()
+	return ip or "127.0.0.1"
 end
 
 ------------------------------------------------
@@ -292,28 +310,28 @@ end
 -- LUA Utils
 ------------------------------------------------
 local function Split(str, delim, maxNb)
-    -- Eliminate bad cases...
-    if string.find(str, delim) == nil then
-        return { str }
-    end
-    if maxNb == nil or maxNb < 1 then
-        maxNb = 0    -- No limit
-    end
-    local result = {}
-    local pat = "(.-)" .. delim .. "()"
-    local nb = 0
-    local lastPos
-    for part, pos in string.gmatch(str, pat) do
-        nb = nb + 1
-        result[nb] = part
-        lastPos = pos
-        if nb == maxNb then break end
-    end
-    -- Handle the last field
-    if nb ~= maxNb then
-        result[nb + 1] = string.sub(str, lastPos)
-    end
-    return result
+	-- Eliminate bad cases...
+	if string.find(str, delim) == nil then
+		return { str }
+	end
+	if maxNb == nil or maxNb < 1 then
+		maxNb = 0    -- No limit
+	end
+	local result = {}
+	local pat = "(.-)" .. delim .. "()"
+	local nb = 0
+	local lastPos
+	for part, pos in string.gmatch(str, pat) do
+		nb = nb + 1
+		result[nb] = part
+		lastPos = pos
+		if nb == maxNb then break end
+	end
+	-- Handle the last field
+	if nb ~= maxNb then
+		result[nb + 1] = string.sub(str, lastPos)
+	end
+	return result
 end
 
 function string:split(sep) -- from http://lua-users.org/wiki/SplitJoin   : changed as consecutive delimeters was not returning empty strings
@@ -326,9 +344,9 @@ end
 
 
 function string:template(variables)
-	return (self:gsub('@(.-)@', 
-		function (key) 
-			return tostring(variables[key] or '') 
+	return (self:gsub('@(.-)@',
+		function (key)
+			return tostring(variables[key] or '')
 		end))
 end
 
@@ -396,7 +414,7 @@ local function WesHttpCall(lul_device,cmd,data)
 	-- get parameter from root device
 	local credentials= getSetVariable(WES_SERVICE,"Credentials", lul_root, "")
 	local ip_address = luup.attr_get ('ip', lul_root )
-	
+
 	if (ipaddr=="") then
 		warning(string.format("IPADDR is not initialized"))
 		return nil
@@ -404,21 +422,21 @@ local function WesHttpCall(lul_device,cmd,data)
 	if (credentials=="") then
 		warning("Missing credentials for Wes device :"..lul_device,TASK_BUSY)
 		return nil
-	end	
-	
+	end
+
 	local url = string.format ("http://%s/%s?%s", ip_address,cmd,data)
 	debug("url:"..url)
-	
+
 	local str = mime.unb64(credentials)
 	local parts = str:split(":")
 	local code,content,httpStatusCode  = luup.inet.wget(url,60,parts[1],parts[2])
 	if (code==0) then
 		-- success
-		debug(string.format("content:%s",content))	
+		debug(string.format("content:%s",content))
 		return content
 	end
 	-- failure
-	debug(string.format("failure=> code:%s httpStatusCode:%s",httpStatusCode))	
+	debug(string.format("failure=> code:%s httpStatusCode:%s",httpStatusCode))
 	return nil
 end
 
@@ -447,7 +465,7 @@ function myWES_Handler(lul_request, lul_parameters, lul_outputformat)
 		hostname = getIP()
 		debug("now hostname="..hostname)
 	end
-	
+
 	-- find a parameter called "command"
 	if ( lul_parameters["command"] ~= nil ) then
 		command =lul_parameters["command"]
@@ -455,14 +473,14 @@ function myWES_Handler(lul_request, lul_parameters, lul_outputformat)
 	    debug("WES_Handler:no command specified, taking default")
 		command ="default"
 	end
-	
+
 	local deviceID = this_device or tonumber(lul_parameters["DeviceNum"] or findTHISDevice() )
-	
+
 	-- switch table
 	local action = {
 
-			["default"] = 
-			function(params)	
+			["default"] =
+			function(params)
 				return "default handler / not successful", "text/plain"
 			end
 	}
@@ -503,13 +521,13 @@ local function createChildren(lul_device)
 	debug(string.format("createChildren(%s)",lul_device))
 
 	-- for all children device, iterate
-    local child_devices = luup.chdev.start(lul_device);
-	
+	local child_devices = luup.chdev.start(lul_device);
+
 	-- iterate through type of child
 	for kchild,child in pairs(childmap) do
 		-- get the map ( csv list of numbers )
 		local map={}
-		
+
 		-- child.map is either directly a table, or a name of a variable containng a csv string
 		if ( type(child.map) == "table") then
 			map = child.map
@@ -517,21 +535,21 @@ local function createChildren(lul_device)
 			local csv  = getSetVariable(WES_SERVICE, child.map, lul_device, "")
 			map = csv:split(",")
 		end
-		
+
 		for k,v in pairs(map) do
 			local i = tonumber(v)
 			luup.chdev.append(
-				lul_device, child_devices, 
-				string.format(kchild,i),			-- children map index is altid 
-				string.format(child.name,i), 		-- children map name attribute is device name 
+				lul_device, child_devices,
+				string.format(kchild,i),			-- children map index is altid
+				string.format(child.name,i), 		-- children map name attribute is device name
 				child.devtype,						-- children device type
 				child.devfile, 						-- children devfile
-				"", "", 
+				"", "",
 				false								-- not embedded
-				)		
+				)
 		end
 	end
-	
+
 	luup.chdev.sync(lul_device, child_devices)
 end
 
@@ -571,12 +589,12 @@ local function loadWesData(lul_device,xmldata)
 	local lomtab = lom.parse(xmldata)
 	for k,v in pairs(xmlmap) do
 		-- debug(string.format("k=%s v=%s",k,json.encode(v)))
-		local nodes = xpath.selectNodes(lomtab,k) 
+		local nodes = xpath.selectNodes(lomtab,k)
 		-- debug(string.format("nodes:%s",json.encode(nodes)))
 		for i,n in pairs(nodes) do
 			-- debug(string.format("i=%s n=%s",i,json.encode(n)))
 			local value = n or v.default
-			if (value=="OFF") then 
+			if (value=="OFF") then
 				value = 0
 			else
 				if (value=="ON") then
@@ -593,6 +611,22 @@ local function loadWesData(lul_device,xmldata)
 			end
 		end
 	end
+	
+	-- load tic data
+	for i,child_name in pairs( {"tic1","tic2"} ) do
+		local child_device = findChild( lul_device, child_name )
+		if (child_device~=nil) then
+			-- iterate xml 
+			local xpath_tmpl = "/data/".. child_name .. "/*"
+			debug(string.format("xpath=%s",xpath_tmpl))
+			local nodes = xpath.selectNodes(lomtab,xpath_tmpl)
+			for idx,xml in pairs(nodes) do
+				debug(string.format("idx:%s xml:%s",idx,json.encode(xml)))
+				setVariableIfChanged(WES_SERVICE, xml.tag, xml[1], child_device)
+			end
+		end
+	end
+	
 	return true
 end
 
@@ -647,7 +681,7 @@ function startupDeferred(lul_device)
 	end
 	local major,minor = 0,0
 	local tbl={}
-	
+
 	if (oldversion~=nil) then
 		major,minor = string.match(oldversion,"v(%d+)%.(%d+)")
 		major,minor = tonumber(major),tonumber(minor)
@@ -656,23 +690,23 @@ function startupDeferred(lul_device)
 		newmajor,newminor = string.match(version,"v(%d+)%.(%d+)")
 		newmajor,newminor = tonumber(newmajor),tonumber(newminor)
 		debug ("Device's New Version is major:"..newmajor.." minor:"..newminor)
-		
+
 		-- force the default in case of upgrade
 		if ( (newmajor>major) or ( (newmajor==major) and (newminor>minor) ) ) then
 			log ("Version upgrade => Reseting Plugin config to default")
 		end
 		luup.variable_set(WES_SERVICE, "Version", version, lul_device)
-	end	
-	
+	end
+
 	-- start handlers
 	registerHandlers()
 	createChildren(lul_device)
-	
+
 	-- start engine
 	local success = false
 	success = startEngine(lul_device)
-	
-	-- NOTHING to start 
+
+	-- NOTHING to start
 	if( luup.version_branch == 1 and luup.version_major == 7) then
 		if (success == true) then
 			luup.set_failure(0,lul_device)	-- should be 0 in UI7
@@ -685,17 +719,17 @@ function startupDeferred(lul_device)
 
 	log("startup completed")
 end
-		
+
 function initstatus(lul_device)
 	lul_device = tonumber(lul_device)
 	this_device = lul_device
-	log("initstatus("..lul_device..") starting version: "..version)	
+	log("initstatus("..lul_device..") starting version: "..version)
 	checkVersion(lul_device)
 	math.randomseed( os.time() )
 	hostname = getIP()
 	local delay = 1		-- delaying first refresh by x seconds
 	debug("initstatus("..lul_device..") startup for Root device, delay:"..delay)
-	luup.call_delay("startupDeferred", delay, tostring(lul_device))		
+	luup.call_delay("startupDeferred", delay, tostring(lul_device))
 end
- 
+
 -- do not delete, last line must be a CR according to MCV wiki page
