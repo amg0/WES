@@ -128,7 +128,7 @@ function saveVar(deviceID,  service, varName, varVal, reload)
 	if (service) {
 		set_device_state(deviceID, service, varName, varVal, 0);	// lost in case of luup restart
 	} else {
-		alert("todo")
+		jQuery.get( buildAttributeSetUrl( deviceID, varName, varVal) );
 	}
 }
 
@@ -149,6 +149,12 @@ function buildVeraURL( deviceID, fnToUse, varName, varValue)
 function buildVariableSetUrl( deviceID, varName, varValue)
 {
 	var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&serviceId='+wes_Svs+'&Variable='+varName+'&Value='+varValue;
+	return urlHead;
+}
+
+function buildAttributeSetUrl( deviceID, varName, varValue)
+{
+	var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&Variable='+varName+'&Value='+varValue;
 	return urlHead;
 }
 

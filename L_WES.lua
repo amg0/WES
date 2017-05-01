@@ -534,7 +534,7 @@ local function createChildren(lul_device)
 				luup.chdev.append(
 					lul_device, child_devices,
 					string.format(kchild,i),			-- children map index is altid
-					string.format(child.name,i), 		-- children map name attribute is device name
+					"WES "..string.format(child.name,i), 	-- children map name attribute is device name
 					child.devtype,						-- children device type
 					child.devfile, 						-- children devfile
 					"", "",
