@@ -1,3 +1,4 @@
+//# sourceURL=J_WES.js
 // This program is free software: you can redistribute it and/or modify
 // it under the condition that it is for private or home useage and 
 // this whole comment is reproduced in the source code file.
@@ -12,6 +13,13 @@
 //-------------------------------------------------------------
 var wes_Svs = 'urn:upnp-org:serviceId:wes1';
 var ip_address = data_request_url;
+
+function goodip(ip)
+{
+	// @duiffie contribution
+	var reg = new RegExp('^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\\d{1,5})?$', 'i');
+	return(reg.test(ip));
+}
 
 if (typeof String.prototype.format == 'undefined') {
 	String.prototype.format = function()
@@ -29,6 +37,16 @@ if (typeof String.prototype.format == 'undefined') {
 		});
 	};
 };
+
+function findDeviceIdx(deviceID) 
+{
+	//jsonp.ud.devices
+    for(var i=0; i<jsonp.ud.devices.length; i++) {
+        if (jsonp.ud.devices[i].id == deviceID) 
+			return i;
+    }
+	return null;
+}
 
 //-------------------------------------------------------------
 // Device TAB : Donate
@@ -48,6 +66,7 @@ function wes_Settings(deviceID) {
 	var debug  = get_device_state(deviceID,  wes_Svs, 'Debug',1);
 	var credentials = get_device_state(deviceID,  wes_Svs, 'Credentials',1);
 	var poll = get_device_state(deviceID,  wes_Svs, 'RefreshPeriod',1);
+	var ip_address = jsonp.ud.devices[findDeviceIdx(deviceID)].ip;
 	var pin = ""
 
 	// get_device_state(deviceID,  wes_Svs, 'PIN',1);
@@ -55,6 +74,10 @@ function wes_Settings(deviceID) {
     '                                                           \
       <div id="wes-settings">                                           \
         <form id="wes-settings-form">                        \
+					<div class="form-group">																	\
+						<label for="wes-ipaddr">IP Addr</label>		\
+						<input type="text" class="form-control" id="wes-ipaddr" placeholder="xx.xx.xx.xx">	\
+					</div>																										\
 					<div class="form-group">																	\
 						<label for="wes-username">User Name</label>		\
 						<input type="text" class="form-control" id="wes-username" placeholder="User">	\
@@ -73,19 +96,25 @@ function wes_Settings(deviceID) {
     '		
 	set_panel_html(html);
 	var arr = atob(credentials).split(":");
+	jQuery( "#wes-ipaddr" ).val(ip_address);
 	jQuery( "#wes-username" ).val(arr[0]);
 	jQuery( "#wes-pwd" ).val(arr[1]);
 	jQuery( "#wes-RefreshPeriod" ).val(poll);
 		
 	jQuery( "#wes-settings-form" ).on("submit", function(event) {
 		event.preventDefault();
+		var ip_address = jQuery( "#wes-ipaddr" ).val();
 		var usr = jQuery( "#wes-username" ).val();
 		var pwd = jQuery( "#wes-pwd" ).val();
 		var poll = jQuery( "#wes-RefreshPeriod" ).val();
 		
 		var encode = btoa( "{0}:{1}".format(usr,pwd) );
-		saveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
-		saveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
+		if (goodip(ip_address)) {
+			saveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
+			saveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
+			saveVar( deviceID,  null , "ip", ip_address, 0 )
+		} else 
+			alert("Invalid IP address")
 		return false;
 	})
 }
@@ -96,7 +125,11 @@ function wes_Settings(deviceID) {
 //-------------------------------------------------------------
 function saveVar(deviceID,  service, varName, varVal, reload)
 {
-	set_device_state(deviceID, wes_Svs, varName, varVal, 0);	// lost in case of luup restart
+	if (service) {
+		set_device_state(deviceID, service, varName, varVal, 0);	// lost in case of luup restart
+	} else {
+		alert("todo")
+	}
 }
 
 
@@ -139,3 +172,4 @@ function buildHandlerUrl(deviceID,command,params)
 	});
 	return encodeURI(urlHead);
 }
+

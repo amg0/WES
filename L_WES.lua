@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.5"
+local version = "v0.6"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local json = require("dkjson")
@@ -99,7 +99,7 @@ function string.starts(String,Start)
 end
 
 local function isempty(s)
-  return s == nil or s == ''
+  return s == nil or s == ""
 end
 
 ---code from lolodomo DNLA plugin
@@ -424,12 +424,12 @@ local function WesHttpCall(lul_device,cmd,data)
 	local credentials= getSetVariable(WES_SERVICE,"Credentials", lul_root, "")
 	local ip_address = luup.attr_get ('ip', lul_root )
 
-	if (ipaddr=="") then
-		warning(string.format("IPADDR is not initialized"))
+	if (isempty(ip_address)) then
+		warning(string.format("IPADDR is not initialized. ipaddr=%s",ip_address))
 		return nil
 	end
 	if (credentials=="") then
-		warning("Missing credentials for Wes device :"..lul_device,TASK_BUSY)
+		warning("Missing credentials for Wes device :"..lul_device)
 		return nil
 	end
 
@@ -445,7 +445,7 @@ local function WesHttpCall(lul_device,cmd,data)
 		return content
 	end
 	-- failure
-	debug(string.format("failure=> code:%s httpStatusCode:%s",httpStatusCode))
+	debug(string.format("failure=> code:%s httpStatusCode:%s",code,httpStatusCode))
 	return nil
 end
 
@@ -639,7 +639,7 @@ function refreshEngineCB(lul_device,norefresh)
 	if (xmldata ~= nil) then
 		loadWesData(lul_device,xmldata)
 	else
-		warning(string.format("missing ip addr or credentials"))
+		UserMessage(string.format("missing ip addr or credentials for device "..lul_device))
 	end
 
 	debug(string.format("programming next refreshEngineCB(%s) in %s",lul_device,period))
@@ -682,7 +682,7 @@ local function startEngine(lul_device)
 		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
 		return loadWesData(lul_device,xmldata)
 	else
-		warning(string.format("missing ip addr or credentials"))
+		UserMessage(string.format("missing ip addr or credentials for device "..lul_device))
 	end
 	return true
 end
