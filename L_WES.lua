@@ -30,20 +30,28 @@ local xpath = require("xpath")
 
 local xmlmap = {
 	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
+	["/data/variables/*/text()"] = { variable="Variable%s" , default="" },
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
+	["/data/analogique/*/text()"] = { variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
 	["/data/switch_virtuel/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
 	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
 }
 
+-- altid is the object ID ( like the relay ID ) on the WES server
 local childmap = {
 	["SONDE%s"] = {
 		devtype="urn:schemas-micasaverde-com:device:TemperatureSensor:1",
 		devfile="D_TemperatureSensor1.xml",
 		name="SONDE %s",
-		map="TempSensors"
+		map="TempSensors" -- user choice in a CSV string 1 to 8 ex:  2,3
 	},
-	-- altid is the relay ID on the WES
+	["ad%s"] = {
+		devtype="urn:schemas-micasaverde-com:device:GenericSensor:1",
+		devfile="D_GenericSensor1.xml",
+		name="ANALOG %s",
+		map="AnalogInputs" -- user choice in a CSV string 1 to 8 ex:  2,3
+	},
 	["rl%s"] = {
 		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
 		devfile="D_BinaryLight1.xml",
@@ -60,13 +68,7 @@ local childmap = {
 		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
 		devfile="D_BinaryLight1.xml",
 		name="SWITCH %s",
-		map="SwitchVirtuals"	-- user choice in a CSV string 1 to 8 ex:  2,3
-	},
-	["tic%s"] = {
-		devtype="urn:schemas-micasaverde-com:device:PowerMeter:1",
-		devfile="D_PowerMeter1.xml",
-		name="TIC %s",
-		map={1,2} -- hard coded dev 1 and 2
+		map="VirtualSwitches"	-- user choice in a CSV string 1 to 8 ex:  2,3
 	}
 }
 
@@ -528,15 +530,17 @@ local function createChildren(lul_device)
 
 		for k,v in pairs(map) do
 			local i = tonumber(v)
-			luup.chdev.append(
-				lul_device, child_devices,
-				string.format(kchild,i),			-- children map index is altid
-				string.format(child.name,i), 		-- children map name attribute is device name
-				child.devtype,						-- children device type
-				child.devfile, 						-- children devfile
-				"", "",
-				false								-- not embedded
-				)
+			if (i ~= nil ) then
+				luup.chdev.append(
+					lul_device, child_devices,
+					string.format(kchild,i),			-- children map index is altid
+					string.format(child.name,i), 		-- children map name attribute is device name
+					child.devtype,						-- children device type
+					child.devfile, 						-- children devfile
+					"", "",
+					false								-- not embedded
+					)
+			end			
 		end
 	end
 
@@ -580,24 +584,29 @@ local function loadWesData(lul_device,xmldata)
 	for k,v in pairs(xmlmap) do
 		-- debug(string.format("k=%s v=%s",k,json.encode(v)))
 		local nodes = xpath.selectNodes(lomtab,k)
-		-- debug(string.format("nodes:%s",json.encode(nodes)))
+		debug(string.format("nodes:%s",json.encode(nodes)))
+		local singleton = ( tablelength(nodes)==1 )
 		for i,n in pairs(nodes) do
 			-- debug(string.format("i=%s n=%s",i,json.encode(n)))
 			local value = n or v.default
-			if (value=="OFF") then
-				value = 0
-			else
-				if (value=="ON") then
-					value = 1
-				end
-			end
 			if (v.child~=nil) then
 				child_device = findChild( lul_device, string.format(v.child,i))
-				if (child_device~=nil) then
+					if (child_device~=nil) then
+						if (value=="OFF") then
+							value = 0
+						else
+						if (value=="ON") then
+							value = 1
+						end
+					end
 					setVariableIfChanged(v.service, v.variable, value, child_device)
 				end
 			else
-				setVariableIfChanged(WES_SERVICE, v.variable, value, lul_device)
+				local varname = v.variable
+				if (singleton==false) then
+					varname = string.format(v.variable,i)
+				end
+				setVariableIfChanged(WES_SERVICE, varname, value, lul_device)
 			end
 		end
 	end
@@ -687,7 +696,7 @@ function startupDeferred(lul_device)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 	local credentials  = getSetVariable(WES_SERVICE, "Credentials", lul_device, "")
 	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
-	local switchvirtuals  = getSetVariable(WES_SERVICE, "SwitchVirtuals", lul_device, "")
+	local VirtualSwitches  = getSetVariable(WES_SERVICE, "VirtualSwitches", lul_device, "")
 
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
