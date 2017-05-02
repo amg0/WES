@@ -14,6 +14,7 @@ local DEBUG_MODE = false	-- controlled by UPNP action
 local version = "v0.6"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
+local CGX_FILE = "vera.cgx"
 local json = require("dkjson")
 local hostname = nil
 
@@ -32,6 +33,8 @@ local xmlmap = {
 	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
 	["/data/variables/*/text()"] = { variable="Variable%s" , default="" },
 	["/data/*/PAP/text()"] = { variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/*/vera/KWHJ/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/*/vera/IHP/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
 	["/data/analogique/*/text()"] = { variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
@@ -591,7 +594,7 @@ local function loadWesData(lul_device,xmldata)
 	for k,v in pairs(xmlmap) do
 		-- debug(string.format("k=%s v=%s",k,json.encode(v)))
 		local nodes = xpath.selectNodes(lomtab,k)
-		debug(string.format("nodes:%s",json.encode(nodes)))
+		debug(string.format("xpath:%s nodes:%s",k,json.encode(nodes)))
 		local singleton = ( tablelength(nodes)==1 )
 		for i,n in pairs(nodes) do
 			-- debug(string.format("i=%s n=%s",i,json.encode(n)))
@@ -628,7 +631,10 @@ local function loadWesData(lul_device,xmldata)
 			local nodes = xpath.selectNodes(lomtab,xpath_tmpl)
 			for idx,xml in pairs(nodes) do
 				debug(string.format("idx:%s xml:%s",idx,json.encode(xml)))
-				setVariableIfChanged(WES_SERVICE, xml.tag, xml[1], child_device)
+				-- if it is a simple string
+				if (type(xml[1]) == "string") then
+					setVariableIfChanged(WES_SERVICE, xml.tag, xml[1], child_device)
+				end
 			end
 		end
 	end
@@ -642,7 +648,7 @@ function refreshEngineCB(lul_device,norefresh)
 	lul_device = tonumber(lul_device)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 
-	local xmldata = WesHttpCall(lul_device,"data.cgx")
+	local xmldata = WesHttpCall(lul_device,CGX_FILE)
 	if (xmldata ~= nil) then
 		loadWesData(lul_device,xmldata)
 	else
@@ -679,7 +685,7 @@ end
 local function startEngine(lul_device)
 	debug(string.format("startEngine(%s)",lul_device))
 	lul_device = tonumber(lul_device)
-	local xmldata = WesHttpCall(lul_device,"data.cgx")
+	local xmldata = WesHttpCall(lul_device,CGX_FILE)
 	-- local xmldata = WesHttpCall(lul_device,"xml/zones/zonesDescription16IP.xml")
 	if (xmldata ~= nil) then
 		local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
