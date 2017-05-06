@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.6"
+local version = "v0.7"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -720,7 +720,7 @@ function refreshEngineCB(lul_device,norefresh)
 	if (xmldata ~= nil) then
 		loadWesData(lul_device,xmldata)
 	else
-		UserMessage(string.format("missing ip addr or credentials for device "..lul_device))
+		UserMessage(string.format("missing ip addr or credentials for device "..lul_device),TASK_ERROR_PERM)
 	end
 
 	debug(string.format("programming next refreshEngineCB(%s) in %s",lul_device,period))
@@ -763,7 +763,7 @@ local function startEngine(lul_device)
 		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
 		return loadWesData(lul_device,xmldata)
 	else
-		UserMessage(string.format("missing ip addr or credentials for device "..lul_device))
+		UserMessage(string.format("missing ip addr or credentials for device "..lul_device),TASK_ERROR_PERM)
 	end
 	return true
 end

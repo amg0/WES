@@ -68,8 +68,29 @@ function wes_Settings(deviceID) {
 	var poll = get_device_state(deviceID,  wes_Svs, 'RefreshPeriod',1);
 	var ip_address = jsonp.ud.devices[findDeviceIdx(deviceID)].ip;
 	var pin = ""
+	var configs = [
+		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes"},
+		{ name: "AnalogInputs", label: "Inputs Analogiques" , placeholder: "comma separated list of indexes"},
+		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes"},
+		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes"},
+		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes"},
+	];
 
-	// get_device_state(deviceID,  wes_Svs, 'PIN',1);
+	var htmlConfigs = "";
+	jQuery.each( configs, function(idx,obj) {
+		var value = get_device_state(deviceID,  wes_Svs, obj.name,1);
+		htmlConfigs += '	\
+					<div class="form-group">																	\
+						<label for="wes-{0}">{1}</label>		\
+						<input type="text" class="form-control" id="wes-{0}" placeholder="{2}" value="{3}">	\
+					</div>																										\
+		'.format(
+			obj.name,
+			obj.label,
+			obj.placeholder,
+			value
+		);
+	});
 	var html =
     '                                                           \
       <div id="wes-settings">                                           \
@@ -89,7 +110,7 @@ function wes_Settings(deviceID) {
 					<div class="form-group">																	\
 						<label for="wes-RefreshPeriod">Polling in sec</label>			\
 						<input type="number" min="1" max="600" class="form-control" id="wes-RefreshPeriod" placeholder="5">	\
-					</div>																								\																							\
+					</div> '+htmlConfigs+'																								\
 					<button id="wes-submit" type="submit" class="btn btn-default">Submit</button>	\
 				</form>                                                 \
       </div>                                                    \
@@ -102,6 +123,7 @@ function wes_Settings(deviceID) {
 	jQuery( "#wes-RefreshPeriod" ).val(poll);
 		
 	jQuery( "#wes-settings-form" ).on("submit", function(event) {
+		var bReload = true;
 		event.preventDefault();
 		var ip_address = jQuery( "#wes-ipaddr" ).val();
 		var usr = jQuery( "#wes-username" ).val();
@@ -113,8 +135,20 @@ function wes_Settings(deviceID) {
 			saveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
 			saveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
 			saveVar( deviceID,  null , "ip", ip_address, 0 )
-		} else 
+			jQuery.each( configs, function(idx,obj) {
+				var val = jQuery("#wes-"+obj.name).val();
+				bReload = bReload && save( deviceID,  wes_Svs, obj.name, val, goodcsv, 0 )
+			});
+		} else {
 			alert("Invalid IP address")
+			bReload = false;
+		}
+		
+		if (bReload) {
+			jQuery.get(data_request_url+"id=reload");
+			alert("Now reloading Luup engine for the changes to be effective");
+		}
+		// http://ip_address:3480/data_request?id=reload
 		return false;
 	})
 }
@@ -123,6 +157,24 @@ function wes_Settings(deviceID) {
 //-------------------------------------------------------------
 // Variable saving ( log , then full save )
 //-------------------------------------------------------------
+function save(deviceID, service, varName, varVal, func, reload) {
+	// reload is optional parameter and defaulted to false
+	if (typeof reload === "undefined" || reload === null) { 
+		reload = false; 
+	}
+
+    if ((!func) || func(varVal)) {
+        //set_device_state(deviceID,  ipx800_Svs, varName, varVal);
+		saveVar(deviceID,  service, varName, varVal, reload)
+        jQuery('#wes-' + varName).css('color', 'black');
+		return true;
+    } else {
+        jQuery('#wes-' + varName).css('color', 'red');
+		alert(varName+':'+varVal+' is not correct');
+    }
+	return false;
+}
+
 function saveVar(deviceID,  service, varName, varVal, reload)
 {
 	if (service) {
@@ -132,7 +184,11 @@ function saveVar(deviceID,  service, varName, varVal, reload)
 	}
 }
 
-
+function goodcsv(v)
+{
+	var reg = new RegExp('^[0-9]*(,[0-9]+)*$', 'i');
+	return(reg.test(v));
+}
 
 //-------------------------------------------------------------
 // Helper functions to build URLs to call VERA code from JS
