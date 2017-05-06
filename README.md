@@ -1,6 +1,6 @@
 # WES
 VERA driver for Wes lares security system
-
+https://www.cartelectronic.fr/index.php?id_cms=8&controller=cms
 
 Fonctionalites:
 - les relais , les entrees digitales, les virtual switchs: vue de l'etat dans vera et changement de l'etat par la UI de vera ou les scenes
