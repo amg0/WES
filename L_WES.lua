@@ -37,9 +37,11 @@ local xmlmap = {
 	["/data/*/vera/KWHJ/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
 	["/data/*/vera/IHP/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
+	["/data/temp/vera/NOM%s/text()"] = { attribute="name" ,child="SONDE%s" , default=""},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
 	["/data/relais/vera/NOM%s/text()"] = { attribute="name" , child="rl%s" , default=""},
 	["/data/analogique/*/text()"] = { variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
+	["/data/analogique/vera/NOM%s/text()"] = { attribute="name" ,child="ad%s" , default=""},
 	["/data/switch_virtuel/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
 	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default=""},
 	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
@@ -48,6 +50,10 @@ local xmlmap = {
 	["/data/impulsion/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/NOM%s/text()"] = { attribute="name" , child="pls%s" , default=""},
+	["/data/pince/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/I%s/text()"] = { variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/NOM%s/text()"] = { attribute="name" , child="pa%s" , default=""},
+	["/data/pince/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/tic%s/vera/caption/text()"] = { attribute="name" , child="tic%s" , default=""},
 }
 
@@ -88,6 +94,12 @@ local childmap = {
 		devfile="D_PowerMeter1.xml",
 		name="TIC %s",
 		map={1,2} -- hard coded dev 1 and 2
+	},	
+	["pa%s"] = {
+		devtype="urn:schemas-micasaverde-com:device:PowerMeter:1",
+		devfile="D_PowerMeter1.xml",
+		name="PINCE %s",
+		map="AnalogClamps" -- user choice in a CSV string 1 to 8 ex:  2,3
 	},	
 	["pls%s"] = {
 		devtype="urn:schemas-micasaverde-com:device:PowerMeter:1",
@@ -767,7 +779,7 @@ function startupDeferred(lul_device)
 	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
 	local VirtualSwitches  = getSetVariable(WES_SERVICE, "VirtualSwitches", lul_device, "")
 	local PulseCounters  = getSetVariable(WES_SERVICE, "PulseCounters", lul_device, "")
-
+	local AnalogClamps = getSetVariable(WES_SERVICE, "AnalogClamps", lul_device, "")
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then
