@@ -162,9 +162,21 @@ c P A4 <I4>%.02f</I4>
 c P W4 <INDEX4>%d</INDEX4>
 t <vera>
 c Pn1 <NOM1>%s</NOM1>
+c PCj1 <CONSOJ1>%.02f</CONSOJ1>
+c PCm1 <CONSOM1>%.02f</CONSOM1>
+c PCa1 <CONSOA1>%.02f</CONSOA1>
 c Pn2 <NOM2>%s</NOM2>
+c PCj2 <CONSOJ2>%.02f</CONSOJ2>
+c PCm2 <CONSOM2>%.02f</CONSOM2>
+c PCa2 <CONSOA2>%.02f</CONSOA2>
 c Pn3 <NOM3>%s</NOM3>
+c PCj3 <CONSOJ3>%.02f</CONSOJ3>
+c PCm3 <CONSOM3>%.02f</CONSOM3>
+c PCa3 <CONSOA3>%.02f</CONSOA3>
 c Pn4 <NOM4>%s</NOM4>
+c PCj4 <CONSOJ4>%.02f</CONSOJ4>
+c PCm4 <CONSOM4>%.02f</CONSOM4>
+c PCa4 <CONSOA4>%.02f</CONSOA4>
 t </vera>
 t </pince>
 t <temp>
@@ -200,14 +212,43 @@ c W2T8 <SONDE29>%.01f</SONDE29>
 c W2T9 <SONDE30>%.01f</SONDE30>
 t <vera>
 c W0N0 <NOM1>%s</NOM1>
+c W0N1 <NOM2>%s</NOM2>
+c W0N2 <NOM3>%s</NOM3>
+c W0N3 <NOM4>%s</NOM4>
+c W0N4 <NOM5>%s</NOM5>
+c W0N5 <NOM6>%s</NOM6>
+c W0N6 <NOM7>%s</NOM7>
+c W0N7 <NOM8>%s</NOM8>
+c W0N8 <NOM9>%s</NOM9>
+c W0N9 <NOM10>%s</NOM10>
+c W1N0 <NOM11>%s</NOM11>
+c W1N1 <NOM12>%s</NOM12>
+c W1N2 <NOM13>%s</NOM13>
+c W1N3 <NOM14>%s</NOM14>
+c W1N4 <NOM15>%s</NOM15>
+c W1N5 <NOM16>%s</NOM16>
+c W1N6 <NOM17>%s</NOM17>
+c W1N7 <NOM18>%s</NOM18>
+c W1N8 <NOM19>%s</NOM19>
+c W1N9 <NOM20>%s</NOM20>
+c W2N0 <NOM21>%s</NOM21>
+c W2N1 <NOM22>%s</NOM22>
+c W2N2 <NOM23>%s</NOM23>
+c W2N3 <NOM24>%s</NOM24>
+c W2N4 <NOM25>%s</NOM25>
+c W2N5 <NOM26>%s</NOM26>
+c W2N6 <NOM27>%s</NOM27>
+c W2N7 <NOM28>%s</NOM28>
+c W2N8 <NOM29>%s</NOM29>
+c W2N9 <NOM30>%s</NOM30>
 t </vera>
 t </temp>
 t <relais>
 c o R1 <RELAIS1>%s</RELAIS1>
 c o R2 <RELAIS2>%s</RELAIS2>
 t <vera>
-c o n1 <NOM1>%s</NOM1>
-c o n2 <NOM2>%s</NOM2>
+c o n0 <NOM1>%s</NOM1>
+c o n1 <NOM2>%s</NOM2>
 t </vera>
 t </relais>
 t <entree>
@@ -223,6 +264,12 @@ c l A1 <AD1>%d</AD1>
 c l A2 <AD2>%d</AD2>
 c l A3 <AD3>%d</AD3>
 c l A4 <AD4>%d</AD4>
+t <vera>
+c l a1 <NOM1>%s</NOM1>
+c l a2 <NOM2>%s</NOM2>
+c l a3 <NOM3>%s</NOM3>
+c l a4 <NOM4>%s</NOM4>
+t </vera>
 t </analogique>
 t <switch_virtuel>
 c l	V1 <SWITCH1>%d</SWITCH1>
