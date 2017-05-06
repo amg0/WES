@@ -46,7 +46,6 @@ local xmlmap = {
 	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default=""},
 	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
 	["/data/entree/vera/NOM%s/text()"] = { attribute="name" , child="in%s" , default=""},
-	-- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/NOM%s/text()"] = { attribute="name" , child="pls%s" , default=""},
@@ -56,6 +55,7 @@ local xmlmap = {
 	["/data/pince/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/tic%s/vera/caption/text()"] = { attribute="name" , child="tic%s" , default=""},
 }
+	-- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 
 -- altid is the object ID ( like the relay ID ) on the WES server
 local childmap = {
