@@ -2,13 +2,18 @@
 VERA driver for Wes lares security system
 
 
-Features:
+Fonctionalites:
 - les relais , les entrees digitales, les virtual switchs: vue de l'etat dans vera et changement de l'etat par la UI de vera ou les scenes
 - les sondes de temp : vue de l'etat dans vera et utilisation possible dans les scenes comme declencheur
 - les entree analogiques,  les pinces amperimetriques, les compteurs a impulsion : vue dans VERA comme des devices de type "urn:micasaverde-com:serviceId:EnergyMetering1" avec les variables Pulse, KWH, Watts comme definis dans la spec UPNP. KWH etant la conso journaliere
 - les variables 1-8 sous forme de variable dans le device maitre VERA "WES"
 
-le mapping entre le vera.cgx et les types/variables devices est definie par un tableau base sur des XPATHS donc facilement modifiable/extensible
+Necessite:
+- installer le fichier vera.cgx dans le site web du Wes
+
+
+Le mapping entre le vera.cgx et les types/variables devices est definie par un tableau base sur des XPATHS donc facilement modifiable/extensible
+
 
 local xmlmap = {
 	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
