@@ -80,7 +80,7 @@ function wes_Settings(deviceID) {
 	jQuery.each( configs, function(idx,obj) {
 		var value = get_device_state(deviceID,  wes_Svs, obj.name,1);
 		htmlConfigs += '	\
-					<div class="form-group">																	\
+					<div class="form-group col-xs-6">																	\
 						<label for="wes-{0}">{1}</label>		\
 						<input type="text" class="form-control" id="wes-{0}" placeholder="{2}" value="{3}">	\
 					</div>																										\
@@ -99,15 +99,15 @@ function wes_Settings(deviceID) {
 						<label for="wes-ipaddr">IP Addr</label>		\
 						<input type="text" class="form-control" id="wes-ipaddr" placeholder="xx.xx.xx.xx">	\
 					</div>																										\
-					<div class="form-group">																	\
+					<div class="form-group col-xs-6">																	\
 						<label for="wes-username">User Name</label>		\
 						<input type="text" class="form-control" id="wes-username" placeholder="User">	\
 					</div>																										\
-					<div class="form-group">																	\
+					<div class="form-group col-xs-6">																	\
 						<label for="wes-pwd">Password</label>			\
 						<input type="password" class="form-control" id="wes-pwd" placeholder="Password">	\
 					</div>																								\
-					<div class="form-group">																	\
+					<div class="form-group col-xs-6">																	\
 						<label for="wes-RefreshPeriod">Polling in sec</label>			\
 						<input type="number" min="1" max="600" class="form-control" id="wes-RefreshPeriod" placeholder="5">	\
 					</div> '+htmlConfigs+'																								\
