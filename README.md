@@ -7,6 +7,10 @@ Fonctionalites:
 - les sondes de temp : vue de l'etat dans vera et utilisation possible dans les scenes comme declencheur
 - les entree analogiques,  les pinces amperimetriques, les compteurs a impulsion : vue dans VERA comme des devices de type "urn:micasaverde-com:serviceId:EnergyMetering1" avec les variables Pulse, KWH, Watts comme definis dans la spec UPNP. KWH etant la conso journaliere
 - les variables 1-8 sous forme de variable dans le device maitre VERA "WES"
+- icone contextuelle ( verte route selon l'etat de la connection ). 
+- possibilite de programmer une scene sur l'etat de la connection vers le WES ( variable IconCode 0 ou 100 )
+- ecran de parametrisation assisté ( controle des champs par des regexp )
+- possibilite de choisir un prefix ( ou nom ) pour les peripheriques "enfants" du WES ( variable NamePrefix)
 
 Necessite:
 - installer le fichier vera.cgx dans le site web du Wes
