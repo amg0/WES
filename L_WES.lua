@@ -11,17 +11,325 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.72"
+local version = "v0.72b"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
 local NAME_PREFIX = "WES "		-- trailing space needed
 local json = require("dkjson")
 local hostname = nil
+local vera_cgx = [[
+t <?xml version="1.0" encoding="utf-8" ?>
+t <data>
+t <info>
+c g d <date>%02d/%02d/%02d</date>
+c h h <time>%02d:%02d</time>
+c v v <firmware>%s</firmware>
+t </info>
+t <tic1>
+c e a <ADCO>%s</ADCO>
+c eo1 <OPTARIF>%s.</OPTARIF>
+c e c <ISOUSC>%d</ISOUSC>
+c T p <PTEC>%s</PTEC>
+c i p <PAP>%d</PAP>
+c ii0 <IINST>%d</IINST>
+c ii1 <IINST1>%d</IINST1>
+c ii2 <IINST2>%d</IINST2>
+c ii3 <IINST3>%d</IINST3>
+c im0 <IMAX>%d</IMAX>
+c im1 <IMAX1>%d</IMAX1>
+c im2 <IMAX2>%d</IMAX2>
+c im3 <IMAX3>%d</IMAX3>
+c Te1 <PEJP>%d</PEJP>
+c Td1 <DEMAIN>%s</DEMAIN>
+c Tb1 <BASE>%s</BASE>
+c Tc2 <HCHC>%s</HCHC>
+c Tc1 <HCHP>%s</HCHP>
+c Tj1 <EJPHN>%s</EJPHN>
+c Tj2 <EJPHPM>%s</EJPHPM>
+c Tr1 <BBRHCJB>%s</BBRHCJB>
+c Tr2 <BBRHPJB>%s</BBRHPJB>
+c Tr3 <BBRHCJW>%s</BBRHCJW>
+c Tr4 <BBRHPJW>%s</BBRHPJW>
+c Tr5 <BBRHCJR>%s</BBRHCJR>
+c Tr6 <BBRHPJR>%s</BBRHPJR>
+t <vera>
+c e n <caption>%s</caption>
+c Ti1 <IHP>%s</IHP>
+c Ti2 <IHC>%s</IHC>
+c a T <KWHA>%d</KWHA>
+c j T <KWHJ>%d</KWHJ>
+c a 1 <KWHAHP>%d</KWHAHP>
+c a 2 <KWHAHC>%d</KWHAHC>
+c a 3 <KWHABHP>%d</KWHABHP>
+c a 4 <KWHABHC>%d</KWHABHC>
+c a 5 <KWHARHP>%d</KWHARHP>
+c a 6 <KWHARHC>%d</KWHARHC>
+c m 1 <KWHMHP>%d</KWHMHP>
+c m 2 <KWHMHC>%d</KWHMHC>
+c m 3 <KWHMBHP>%d</KWHMBHP>
+c m 4 <KWHMBHC>%d</KWHMBHC>
+c m 5 <KWHMRHP>%d</KWHMRHP>
+c m 6 <KWHMRHC>%d</KWHMRHC>
+c s 1 <KWHSHP>%d</KWHSHP>
+c s 2 <KWHSHC>%d</KWHSHC>
+c s 3 <KWHSBHP>%d</KWHSBHP>
+c s 4 <KWHSBHC>%d</KWHSBHC>
+c s 5 <KWHSRHP>%d</KWHSRHP>
+c s 6 <KWHSRHC>%d</KWHSRHC>
+c j 1 <KWHJHP>%d</KWHJHP>
+c j 2 <KWHJHC>%d</KWHJHC>
+c j 3 <KWHJBHP>%d</KWHJBHP>
+c j 4 <KWHJBHC>%d</KWHJBHC>
+c j 5 <KWHJRHP>%d</KWHJRHP>
+c j 6 <KWHJRHC>%d</KWHJRHC>
+t </vera>
+t </tic1>
+t <tic2>
+c e A <ADCO>%s</ADCO>
+c eo2 <OPTARIF>%s.</OPTARIF>
+c e C <ISOUSC>%d</ISOUSC>
+c T P <PTEC>%s</PTEC>
+c I p <PAP>%d</PAP>
+c Ii0 <IINST>%d</IINST>
+c Ii1 <IINST1>%d</IINST1>
+c Ii2 <IINST2>%d</IINST2>
+c Ii3 <IINST3>%d</IINST3>
+c Im0 <IMAX>%d</IMAX>
+c Im1 <IMAX1>%d</IMAX1>
+c Im2 <IMAX2>%d</IMAX2>
+c Im3 <IMAX3>%d</IMAX3>
+c Te2 <PEJP>%d</PEJP>
+c Td2 <DEMAIN>%s</DEMAIN>
+c TB1 <BASE>%s</BASE>
+c TC2 <HCHC>%s</HCHC>
+c TC1 <HCHP>%s</HCHP>
+c TJ1 <EJPHN>%s</EJPHN>
+c TJ2 <EJPHPM>%s</EJPHPM>
+c TR1 <BBRHCJB>%s</BBRHCJB>
+c TR2 <BBRHPJB>%s</BBRHPJB>
+c TR3 <BBRHCJW>%s</BBRHCJW>
+c TR4 <BBRHPJW>%s</BBRHPJW>
+c TR5 <BBRHCJR>%s</BBRHCJR>
+c TR6 <BBRHPJR>%s</BBRHPJR>
+t <vera>
+c e N <caption>%s</caption>
+c TI1 <IHP>%s</IHP>
+c TI2 <IHC>%s</IHC>
+c A T <KWHA>%d</KWHA>
+c J T <KWHJ>%d</KWHJ>
+c A 1 <KWHAHP>%d</KWHAHP>
+c A 2 <KWHAHC>%d</KWHAHC>
+c A 3 <KWHABHP>%d</KWHABHP>
+c A 4 <KWHABHC>%d</KWHABHC>
+c A 5 <KWHARHP>%d</KWHARHP>
+c A 6 <KWHARHC>%d</KWHARHC>
+c M 1 <KWHMHP>%d</KWHMHP>
+c M 2 <KWHMHC>%d</KWHMHC>
+c M 3 <KWHMBHP>%d</KWHMBHP>
+c M 4 <KWHMBHC>%d</KWHMBHC>
+c M 5 <KWHMRHP>%d</KWHMRHP>
+c M 6 <KWHMRHC>%d</KWHMRHC>
+c S 1 <KWHSHP>%d</KWHSHP>
+c S 2 <KWHSHC>%d</KWHSHC>
+c S 3 <KWHSBHP>%d</KWHSBHP>
+c S 4 <KWHSBHC>%d</KWHSBHC>
+c S 5 <KWHSRHP>%d</KWHSRHP>
+c S 6 <KWHSRHC>%d</KWHSRHC>
+c J 1 <KWHJHP>%d</KWHJHP>
+c J 2 <KWHJHC>%d</KWHJHC>
+c J 3 <KWHJBHP>%d</KWHJBHP>
+c J 4 <KWHJBHC>%d</KWHJBHC>
+c J 5 <KWHJRHP>%d</KWHJRHP>
+c J 6 <KWHJRHC>%d</KWHJRHC>
+t </vera>
+t </tic2>
+t <impulsion>
+c pp1 <PULSE1>%d</PULSE1>
+c pIU1<INDEX1>%.0f</INDEX1>
+c pp2 <PULSE2>%d</PULSE2>
+c pIU2<INDEX2>%.0f</INDEX2>
+c pp3 <PULSE3>%d</PULSE3>
+c pIU3<INDEX3>%.0f</INDEX3>
+c pp4 <PULSE4>%d</PULSE4>
+c pIU4<INDEX4>%.0f</INDEX4>
+t <vera>
+c pCj1 <CONSOJ1>%s</CONSOJ1>
+c pCm1 <CONSOM1>%s</CONSOM1>
+c pCa1 <CONSOA1>%s</CONSOA1>
+c pn1 <NOM1>%s</NOM1>
+c pCj2 <CONSOJ2>%s</CONSOJ2>
+c pCm2 <CONSOM2>%s</CONSOM2>
+c pCa2 <CONSOA2>%s</CONSOA2>
+c pn2 <NOM2>%s</NOM2>
+c pCj3 <CONSOJ3>%s</CONSOJ3>
+c pCm3 <CONSOM3>%s</CONSOM3>
+c pCa3 <CONSOA3>%s</CONSOA3>
+c pn3 <NOM3>%s</NOM3>
+c pCj4 <CONSOJ4>%s</CONSOJ4>
+c pCm4 <CONSOM4>%s</CONSOM4>
+c pCa4 <CONSOA4>%s</CONSOA4>
+c pn4 <NOM4>%s</NOM4>
+t </vera>
+t </impulsion>
+t <pince>
+c P A1 <I1>%.02f</I1>
+c P W1 <INDEX1>%d</INDEX1>
+c P A2 <I2>%.02f</I2>
+c P W2 <INDEX2>%d</INDEX2>
+c P A3 <I3>%.02f</I3>
+c P W3 <INDEX3>%d</INDEX3>
+c P A4 <I4>%.02f</I4>
+c P W4 <INDEX4>%d</INDEX4>
+t <vera>
+c Pn1 <NOM1>%s</NOM1>
+c PCj1 <CONSOJ1>%.02f</CONSOJ1>
+c PCm1 <CONSOM1>%.02f</CONSOM1>
+c PCa1 <CONSOA1>%.02f</CONSOA1>
+c Pn2 <NOM2>%s</NOM2>
+c PCj2 <CONSOJ2>%.02f</CONSOJ2>
+c PCm2 <CONSOM2>%.02f</CONSOM2>
+c PCa2 <CONSOA2>%.02f</CONSOA2>
+c Pn3 <NOM3>%s</NOM3>
+c PCj3 <CONSOJ3>%.02f</CONSOJ3>
+c PCm3 <CONSOM3>%.02f</CONSOM3>
+c PCa3 <CONSOA3>%.02f</CONSOA3>
+c Pn4 <NOM4>%s</NOM4>
+c PCj4 <CONSOJ4>%.02f</CONSOJ4>
+c PCm4 <CONSOM4>%.02f</CONSOM4>
+c PCa4 <CONSOA4>%.02f</CONSOA4>
+t </vera>
+t </pince>
+t <temp>
+c W0T0 <SONDE1>%.01f</SONDE1>
+c W0T1 <SONDE2>%.01f</SONDE2>
+c W0T2 <SONDE3>%.01f</SONDE3>
+c W0T3 <SONDE4>%.01f</SONDE4>
+c W0T4 <SONDE5>%.01f</SONDE5>
+c W0T5 <SONDE6>%.01f</SONDE6>
+c W0T6 <SONDE7>%.01f</SONDE7>
+c W0T7 <SONDE8>%.01f</SONDE8>
+c W0T8 <SONDE9>%.01f</SONDE9>
+c W0T9 <SONDE10>%.01f</SONDE10>
+c W1T0 <SONDE11>%.01f</SONDE11>
+c W1T1 <SONDE12>%.01f</SONDE12>
+c W1T2 <SONDE13>%.01f</SONDE13>
+c W1T3 <SONDE14>%.01f</SONDE14>
+c W1T4 <SONDE15>%.01f</SONDE15>
+c W1T5 <SONDE16>%.01f</SONDE16>
+c W1T6 <SONDE17>%.01f</SONDE17>
+c W1T7 <SONDE18>%.01f</SONDE18>
+c W1T8 <SONDE19>%.01f</SONDE19>
+c W1T9 <SONDE20>%.01f</SONDE20>
+c W2T0 <SONDE21>%.01f</SONDE21>
+c W2T1 <SONDE22>%.01f</SONDE22>
+c W2T2 <SONDE23>%.01f</SONDE23>
+c W2T3 <SONDE24>%.01f</SONDE24>
+c W2T4 <SONDE25>%.01f</SONDE25>
+c W2T5 <SONDE26>%.01f</SONDE26>
+c W2T6 <SONDE27>%.01f</SONDE27>
+c W2T7 <SONDE28>%.01f</SONDE28>
+c W2T8 <SONDE29>%.01f</SONDE29>
+c W2T9 <SONDE30>%.01f</SONDE30>
+t <vera>
+c W0N0 <NOM1>%s</NOM1>
+c W0N1 <NOM2>%s</NOM2>
+c W0N2 <NOM3>%s</NOM3>
+c W0N3 <NOM4>%s</NOM4>
+c W0N4 <NOM5>%s</NOM5>
+c W0N5 <NOM6>%s</NOM6>
+c W0N6 <NOM7>%s</NOM7>
+c W0N7 <NOM8>%s</NOM8>
+c W0N8 <NOM9>%s</NOM9>
+c W0N9 <NOM10>%s</NOM10>
+c W1N0 <NOM11>%s</NOM11>
+c W1N1 <NOM12>%s</NOM12>
+c W1N2 <NOM13>%s</NOM13>
+c W1N3 <NOM14>%s</NOM14>
+c W1N4 <NOM15>%s</NOM15>
+c W1N5 <NOM16>%s</NOM16>
+c W1N6 <NOM17>%s</NOM17>
+c W1N7 <NOM18>%s</NOM18>
+c W1N8 <NOM19>%s</NOM19>
+c W1N9 <NOM20>%s</NOM20>
+c W2N0 <NOM21>%s</NOM21>
+c W2N1 <NOM22>%s</NOM22>
+c W2N2 <NOM23>%s</NOM23>
+c W2N3 <NOM24>%s</NOM24>
+c W2N4 <NOM25>%s</NOM25>
+c W2N5 <NOM26>%s</NOM26>
+c W2N6 <NOM27>%s</NOM27>
+c W2N7 <NOM28>%s</NOM28>
+c W2N8 <NOM29>%s</NOM29>
+c W2N9 <NOM30>%s</NOM30>
+t </vera>
+t </temp>
+t <relais>
+c o R1 <RELAIS1>%s</RELAIS1>
+c o R2 <RELAIS2>%s</RELAIS2>
+t <vera>
+c o n0 <NOM1>%s</NOM1>
+c o n1 <NOM2>%s</NOM2>
+t </vera>
+t </relais>
+t <entree>
+c l	E1 <ENTREE1>%d</ENTREE1>
+c l	E2 <ENTREE2>%d</ENTREE2>
+t <vera>
+c l n1 <NOM1>%s</NOM1>
+c l n2 <NOM2>%s</NOM2>
+t </vera>
+t </entree>
+t <analogique>
+c l A1 <AD1>%d</AD1>
+c l A2 <AD2>%d</AD2>
+c l A3 <AD3>%d</AD3>
+c l A4 <AD4>%d</AD4>
+t <vera>
+c l a1 <NOM1>%s</NOM1>
+c l a2 <NOM2>%s</NOM2>
+c l a3 <NOM3>%s</NOM3>
+c l a4 <NOM4>%s</NOM4>
+t </vera>
+t </analogique>
+t <switch_virtuel>
+c l	V1 <SWITCH1>%d</SWITCH1>
+c l	V2 <SWITCH2>%d</SWITCH2>
+c l	V3 <SWITCH3>%d</SWITCH3>
+c l	V4 <SWITCH4>%d</SWITCH4>
+c l	V5 <SWITCH5>%d</SWITCH5>
+c l	V6 <SWITCH6>%d</SWITCH6>
+c l	V7 <SWITCH7>%d</SWITCH7>
+c l	V8 <SWITCH8>%d</SWITCH8>
+t <vera>
+c l N1 <NOM1>%s</NOM1>
+c l N2 <NOM2>%s</NOM2>
+c l N3 <NOM3>%s</NOM3>
+c l N4 <NOM4>%s</NOM4>
+c l N5 <NOM5>%s</NOM5>
+c l N6 <NOM6>%s</NOM6>
+c l N7 <NOM7>%s</NOM7>
+c l N8 <NOM8>%s</NOM8>
+t </vera>
+t </switch_virtuel>
+t <variables>
+c Vv1 <VARIABLE1>%.02f</VARIABLE1>
+c Vv2 <VARIABLE2>%.02f</VARIABLE2>
+c Vv3 <VARIABLE3>%.02f</VARIABLE3>
+c Vv4 <VARIABLE4>%.02f</VARIABLE4>
+c Vv5 <VARIABLE5>%.02f</VARIABLE5>
+c Vv6 <VARIABLE6>%.02f</VARIABLE6>
+c Vv7 <VARIABLE7>%.02f</VARIABLE7>
+c Vv8 <VARIABLE8>%.02f</VARIABLE8>
+t </variables>
+c WRo
+t </data>
+]]
 
 local mime = require('mime')
 local socket = require("socket")
 local http = require("socket.http")
+local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local lom = require("lxp.lom") -- http://matthewwild.co.uk/projects/luaexpat/lom.html
 local xpath = require("xpath")
@@ -545,8 +853,21 @@ end
 -- STARTUP Sequence
 ------------------------------------------------
 
-local function registerHandlers()
-	luup.register_handler("myWES_Handler","WES_Handler")
+local function prepareWEScgx(lul_device)
+	local userftp= getSetVariable(WES_SERVICE,"UserFTP", lul_device, "adminftp")
+	local passwordftp= getSetVariable(WES_SERVICE,"PasswordFTP", lul_device, "wesftp")
+	-- luup.register_handler("myWES_Handler","WES_Handler")
+	-- local str = "coucou"
+	local f,e = ftp.put( {
+		host = "192.168.1.31",
+		source = ltn12.source.string(vera_cgx),
+		argument = CGX_FILE,
+		user = userftp,
+		password = passwordftp
+	--    port = 21,
+	--    type = "a"
+	})
+	debug(string.format("FTP f=%s e=%s",json.encode(f),json.encode(e)))
 end
 
 local function prepareXMLmap(lul_device)
@@ -797,6 +1118,8 @@ function startupDeferred(lul_device)
 	local AnalogClamps = getSetVariable(WES_SERVICE, "AnalogClamps", lul_device, "")
 	local NamePrefix = getSetVariable(WES_SERVICE, "NamePrefix", lul_device, NAME_PREFIX)
 	local iconCode = getSetVariable(WES_SERVICE,"IconCode", lul_device, "0")
+	local userftp= getSetVariable(WES_SERVICE,"UserFTP", lul_device, "adminftp")
+	local passwordftp= getSetVariable(WES_SERVICE,"PasswordFTP", lul_device, "wesftp")
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then
@@ -823,7 +1146,7 @@ function startupDeferred(lul_device)
 	end
 
 	-- start handlers
-	registerHandlers()
+	prepareWEScgx(lul_device)
 	createChildren(lul_device)
 	prepareXMLmap(lul_device)
 	

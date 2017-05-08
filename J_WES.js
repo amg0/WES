@@ -67,7 +67,6 @@ function wes_Settings(deviceID) {
 	var credentials = get_device_state(deviceID,  wes_Svs, 'Credentials',1);
 	var poll = get_device_state(deviceID,  wes_Svs, 'RefreshPeriod',1);
 	var ip_address = jsonp.ud.devices[findDeviceIdx(deviceID)].ip;
-	var pin = ""
 	var configs = [
 		{ name: "NamePrefix", label: "Prefix pour les noms" , placeholder: "Prefix ou vide"},
 		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes" , func: goodcsv},
@@ -75,6 +74,8 @@ function wes_Settings(deviceID) {
 		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes", func: goodcsv},
 		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes", func: goodcsv},
 		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes", func: goodcsv},
+		{ name: "UserFTP", label: "User pour FTP" , placeholder: "doit etre configure sur le WES, par default adminftp"},
+		{ name: "PasswordFTP", label: "Password pour FTP" , placeholder: "doit etre configure sur le WES, par default wesftp"}
 	];
 
 	var htmlConfigs = "";
