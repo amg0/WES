@@ -69,11 +69,12 @@ function wes_Settings(deviceID) {
 	var ip_address = jsonp.ud.devices[findDeviceIdx(deviceID)].ip;
 	var pin = ""
 	var configs = [
-		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes"},
-		{ name: "AnalogInputs", label: "Inputs Analogiques" , placeholder: "comma separated list of indexes"},
-		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes"},
-		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes"},
-		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes"},
+		{ name: "NamePrefix", label: "Prefix pour les noms" , placeholder: "Prefix ou vide"},
+		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes" , func: goodcsv},
+		{ name: "AnalogInputs", label: "Inputs Analogiques" , placeholder: "comma separated list of indexes", func: goodcsv},
+		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes", func: goodcsv},
+		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes", func: goodcsv},
+		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes", func: goodcsv},
 	];
 
 	var htmlConfigs = "";
@@ -95,10 +96,6 @@ function wes_Settings(deviceID) {
     '                                                           \
       <div id="wes-settings">                                           \
         <form id="wes-settings-form">                        \
-					<div class="form-group">																	\
-						<label for="wes-ipaddr">IP Addr</label>		\
-						<input type="text" class="form-control" id="wes-ipaddr" placeholder="xx.xx.xx.xx">	\
-					</div>																										\
 					<div class="form-group col-xs-6">																	\
 						<label for="wes-username">User Name</label>		\
 						<input type="text" class="form-control" id="wes-username" placeholder="User">	\
@@ -107,6 +104,10 @@ function wes_Settings(deviceID) {
 						<label for="wes-pwd">Password</label>			\
 						<input type="password" class="form-control" id="wes-pwd" placeholder="Password">	\
 					</div>																								\
+					<div class="form-group col-xs-6">																	\
+						<label for="wes-ipaddr">IP Addr</label>		\
+						<input type="text" class="form-control" id="wes-ipaddr" placeholder="xx.xx.xx.xx">	\
+					</div>																										\
 					<div class="form-group col-xs-6">																	\
 						<label for="wes-RefreshPeriod">Polling in sec</label>			\
 						<input type="number" min="1" max="600" class="form-control" id="wes-RefreshPeriod" placeholder="5">	\
@@ -137,7 +138,7 @@ function wes_Settings(deviceID) {
 			saveVar( deviceID,  null , "ip", ip_address, 0 )
 			jQuery.each( configs, function(idx,obj) {
 				var val = jQuery("#wes-"+obj.name).val();
-				bReload = bReload && save( deviceID,  wes_Svs, obj.name, val, goodcsv, 0 )
+				bReload = bReload && save( deviceID,  wes_Svs, obj.name, val, jQuery.isFunction(obj.func) ? obj.func : null, 0 )
 			});
 		} else {
 			alert("Invalid IP address")

@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.7"
+local version = "v0.71"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -37,23 +37,23 @@ local xmlmap = {
 	["/data/*/vera/KWHJ/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
 	["/data/*/vera/IHP/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
 	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
-	["/data/temp/vera/NOM%s/text()"] = { attribute="name" ,child="SONDE%s" , default=""},
+	["/data/temp/vera/NOM%s/text()"] = { attribute="name" ,child="SONDE%s" , default="" , mask=NAME_PREFIX.."%s"},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
-	["/data/relais/vera/NOM%s/text()"] = { attribute="name" , child="rl%s" , default=""},
+	["/data/relais/vera/NOM%s/text()"] = { attribute="name" , child="rl%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/analogique/*/text()"] = { variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
-	["/data/analogique/vera/NOM%s/text()"] = { attribute="name" ,child="ad%s" , default=""},
+	["/data/analogique/vera/NOM%s/text()"] = { attribute="name" ,child="ad%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/switch_virtuel/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
-	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default=""},
+	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
-	["/data/entree/vera/NOM%s/text()"] = { attribute="name" , child="in%s" , default=""},
+	["/data/entree/vera/NOM%s/text()"] = { attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/impulsion/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
-	["/data/impulsion/vera/NOM%s/text()"] = { attribute="name" , child="pls%s" , default=""},
+	["/data/impulsion/vera/NOM%s/text()"] = { attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/pince/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/I%s/text()"] = { variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/vera/NOM%s/text()"] = { attribute="name" , child="pa%s" , default=""},
+	["/data/pince/vera/NOM%s/text()"] = { attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/pince/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/tic%s/vera/caption/text()"] = { attribute="name" , child="tic%s" , default=""},
+	["/data/tic%s/vera/caption/text()"] = { attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
 }
 	-- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 
@@ -546,6 +546,15 @@ local function registerHandlers()
 	luup.register_handler("myWES_Handler","WES_Handler")
 end
 
+local function prepareXMLmap(lul_device)
+	local NamePrefix = getSetVariable(WES_SERVICE, "NamePrefix", lul_device, NAME_PREFIX)
+	for xp,v in pairs(xmlmap) do
+		if (v.mask ~=nil) then
+			v.mask  = v.mask:gsub(NAME_PREFIX,NamePrefix,1)
+		end
+	end
+end
+
 local function createChildren(lul_device)
 	debug(string.format("createChildren(%s)",lul_device))
 
@@ -615,7 +624,7 @@ function getCurrentTemperature(lul_device)
 	return luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
 end
 
-local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value)
+local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask)
 	service = service or WES_SERVICE
 	debug( string.format("xpath:%s child:%s service:%s variable:%s attribute:%s default:%s",xp,child_target or "", service or "", variable or "", attribute or "", default_value or "") )
 	local map_iteration = {1}
@@ -669,6 +678,9 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 			-- save value
 			if (target_device ~= nil ) then
 				-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
+				if (mask~=nil) then
+					value = string.format(mask,value)
+				end
 				if (variable~=nil) then
 					setVariableIfChanged(service, var_name, value, target_device)
 				else
@@ -687,7 +699,7 @@ local function loadWesData(lul_device,xmldata)
 	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
 	local lomtab = lom.parse(xmldata)
 	for xp,v in pairs(xmlmap) do
-		doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default)
+		doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask)
 	end
 	
 	-- load tic data
@@ -780,6 +792,7 @@ function startupDeferred(lul_device)
 	local VirtualSwitches  = getSetVariable(WES_SERVICE, "VirtualSwitches", lul_device, "")
 	local PulseCounters  = getSetVariable(WES_SERVICE, "PulseCounters", lul_device, "")
 	local AnalogClamps = getSetVariable(WES_SERVICE, "AnalogClamps", lul_device, "")
+	local NamePrefix = getSetVariable(WES_SERVICE, "NamePrefix", lul_device, NAME_PREFIX)
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then
@@ -808,7 +821,8 @@ function startupDeferred(lul_device)
 	-- start handlers
 	registerHandlers()
 	createChildren(lul_device)
-
+	prepareXMLmap(lul_device)
+	
 	-- start engine
 	local success = false
 	success = startEngine(lul_device)
