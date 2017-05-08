@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.72b"
+local version = "v0.73"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -329,7 +329,6 @@ t </data>
 local mime = require('mime')
 local socket = require("socket")
 local http = require("socket.http")
-local ftp = require("socket.ftp")
 local ltn12 = require("ltn12")
 local lom = require("lxp.lom") -- http://matthewwild.co.uk/projects/luaexpat/lom.html
 local xpath = require("xpath")
@@ -854,6 +853,7 @@ end
 ------------------------------------------------
 
 local function prepareWEScgx(lul_device)
+	local ftp = require("socket.ftp")
 	local userftp= getSetVariable(WES_SERVICE,"UserFTP", lul_device, "adminftp")
 	local passwordftp= getSetVariable(WES_SERVICE,"PasswordFTP", lul_device, "wesftp")
 	-- luup.register_handler("myWES_Handler","WES_Handler")
@@ -867,7 +867,10 @@ local function prepareWEScgx(lul_device)
 	--    port = 21,
 	--    type = "a"
 	})
-	debug(string.format("FTP f=%s e=%s",json.encode(f),json.encode(e)))
+	debug(string.format("FTP put file=%s f=%s e=%s",CGX_FILE,json.encode(f),json.encode(e)))
+	if (f==nil) then
+		error(string.format("Failed to upload %s file, error = %s",CGX_FILE,e))
+	end
 end
 
 local function prepareXMLmap(lul_device)
