@@ -2,6 +2,32 @@
   "flashicon": "https://raw.githubusercontent.com/amg0/Wes/master/iconWES.png",
   "default_icon": "https://raw.githubusercontent.com/amg0/Wes/master/iconWES.png",
   "halloIconsDir": "pics\/hallo",
+  "state_icons": [
+    "iconWES_0.png",
+    "iconWES_100.png",
+	{
+		"img": "https://raw.githubusercontent.com/amg0/Wes/master/iconWES_0.png",
+		"conditions": [
+			{
+				"service": "urn:upnp-org:serviceId:wes1",
+				"variable": "IconCode",
+				"operator": "==",
+				"value": 0
+			}
+		]
+	},
+	{
+		"img": "https://raw.githubusercontent.com/amg0/Wes/master/iconWES_100.png",
+		"conditions": [
+			{
+				"service": "urn:upnp-org:serviceId:wes1",
+				"variable": "IconCode",
+				"operator": "==",
+				"value": 100
+			}
+		]
+	}
+  ],
   "x": "2",
   "y": "4",
   "inScene": "1",

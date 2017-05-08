@@ -479,7 +479,10 @@ local function WesHttpCall(lul_device,cmd,data)
 	if (code==0) then
 		-- success
 		debug(string.format("content:%s",content))
+		setVariableIfChanged(WES_SERVICE, "IconCode", 100, lul_device)
 		return content
+	else
+		setVariableIfChanged(WES_SERVICE, "IconCode", 0, lul_device)
 	end
 	-- failure
 	debug(string.format("failure=> code:%s httpStatusCode:%s",code,httpStatusCode))
@@ -793,6 +796,7 @@ function startupDeferred(lul_device)
 	local PulseCounters  = getSetVariable(WES_SERVICE, "PulseCounters", lul_device, "")
 	local AnalogClamps = getSetVariable(WES_SERVICE, "AnalogClamps", lul_device, "")
 	local NamePrefix = getSetVariable(WES_SERVICE, "NamePrefix", lul_device, NAME_PREFIX)
+	local iconCode = getSetVariable(WES_SERVICE,"IconCode", lul_device, "0")
 	-- local ipaddr = luup.attr_get ('ip', lul_device )
 
 	if (debugmode=="1") then
