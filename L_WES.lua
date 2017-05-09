@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.73"
+local version = "v0.74"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 5
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -852,7 +852,7 @@ end
 -- STARTUP Sequence
 ------------------------------------------------
 
-local function prepareWEScgx(lul_device)
+function prepareWEScgx(lul_device)
 	local ftp = require("socket.ftp")
 	local userftp= getSetVariable(WES_SERVICE,"UserFTP", lul_device, "adminftp")
 	local passwordftp= getSetVariable(WES_SERVICE,"PasswordFTP", lul_device, "wesftp")
@@ -1112,7 +1112,7 @@ function startupDeferred(lul_device)
 	log("startupDeferred, called on behalf of device:"..lul_device)
 
 	local debugmode = getSetVariable(WES_SERVICE, "Debug", lul_device, "0")
-	local oldversion = getSetVariable(WES_SERVICE, "Version", lul_device, version)
+	local oldversion = getSetVariable(WES_SERVICE, "Version", lul_device, "")
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 	local credentials  = getSetVariable(WES_SERVICE, "Credentials", lul_device, "")
 	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
@@ -1133,23 +1133,28 @@ function startupDeferred(lul_device)
 	local tbl={}
 
 	if (oldversion~=nil) then
-		major,minor = string.match(oldversion,"v(%d+)%.(%d+)")
-		major,minor = tonumber(major),tonumber(minor)
-		debug ("Plugin version: "..version.." Device's Version is major:"..major.." minor:"..minor)
+		if (oldversion ~= "") then
+			major,minor = string.match(oldversion,"v(%d+)%.(%d+)")
+			major,minor = tonumber(major),tonumber(minor)
+			debug ("Plugin version: "..version.." Device's Version is major:"..major.." minor:"..minor)
 
-		newmajor,newminor = string.match(version,"v(%d+)%.(%d+)")
-		newmajor,newminor = tonumber(newmajor),tonumber(newminor)
-		debug ("Device's New Version is major:"..newmajor.." minor:"..newminor)
+			newmajor,newminor = string.match(version,"v(%d+)%.(%d+)")
+			newmajor,newminor = tonumber(newmajor),tonumber(newminor)
+			debug ("Device's New Version is major:"..newmajor.." minor:"..newminor)
 
-		-- force the default in case of upgrade
-		if ( (newmajor>major) or ( (newmajor==major) and (newminor>minor) ) ) then
-			log ("Version upgrade => Reseting Plugin config to default")
+			-- force the default in case of upgrade
+			if ( (newmajor>major) or ( (newmajor==major) and (newminor>minor) ) ) then
+				log ("Version upgrade => Reseting Plugin config to default and FTP uploading the *.CGX file on the WES server")
+				prepareWEScgx(lul_device)
+			end
+		else
+			log ("New installation =>  FTP uploading the *.CGX file on the WES server")
+			prepareWEScgx(lul_device)
 		end
 		luup.variable_set(WES_SERVICE, "Version", version, lul_device)
 	end
 
 	-- start handlers
-	prepareWEScgx(lul_device)
 	createChildren(lul_device)
 	prepareXMLmap(lul_device)
 	
