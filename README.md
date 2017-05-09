@@ -1,5 +1,5 @@
 # WES
-VERA driver for Wes lares security system
+VERA driver for Wes v2 serveur from cartelectronic.fr
 https://www.cartelectronic.fr/index.php?id_cms=8&controller=cms
 
 Fonctionalites: V0.74
