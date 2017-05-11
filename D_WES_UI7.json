@@ -243,7 +243,47 @@
   "eventList":{
   },
   "eventList2": [
-	],
+      {
+		"id": 1,
+		"label": {
+			"lang_tag": "wes_reachable",
+			"text": "WES server is reachable or not"
+		},
+		"serviceId": "urn:upnp-org:serviceId:wes1",
+		"norepeat": "1",
+		"argumentList": [
+			{
+			  "id": 1,
+			  "dataType": "ui4",
+			  "defaultValue": 0,
+			  "allowedValueList": [
+				{
+				  "Not Reachable": "0",
+				  "HumanFriendlyText": {
+					"lang_tag": "wes_device_away",
+					"text": "_DEVICE_NAME_ is not reachable"
+				  }
+				},
+				{
+				  "Reachable": "100",
+				  "HumanFriendlyText": {
+					"lang_tag": "wes_device_present",
+					"text": "_DEVICE_NAME_ is reachable"
+				  }
+				}
+			  ],
+			  "name": "IconCode",
+			  "comparisson": "=",
+			  "prefix": {
+				"lang_tag": "which_mode",
+				"text": "Which mode"
+			  },
+			  "suffix": {
+			  }
+			}
+		]
+      }
+  ],
   "DeviceType": "urn:schemas-upnp-org:device:wes:1",
   "device_type": "urn:schemas-upnp-org:device:wes:1"
 }
