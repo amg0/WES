@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.74"
+local version = "v0.74b"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -347,6 +347,7 @@ local xmlmap = {
 	["/data/temp/vera/NOM%s/text()"] = { attribute="name" ,child="SONDE%s" , default="" , mask=NAME_PREFIX.."%s"},
 	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
 	["/data/relais/vera/NOM%s/text()"] = { attribute="name" , child="rl%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/relais1W/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s" , default=""},
 	["/data/analogique/*/text()"] = { variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
 	["/data/analogique/vera/NOM%s/text()"] = { attribute="name" ,child="ad%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/switch_virtuel/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
@@ -383,6 +384,12 @@ local childmap = {
 		devfile="D_BinaryLight1.xml",
 		name="RELAIS %s",
 		map={1,2}	-- hard coded dev 1 and 2
+	},
+	["rl1w%s"] = {
+		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
+		devfile="D_BinaryLight1.xml",
+		name="RELAIS 1W %s",
+		map="Relais1W"	-- user choice in a CSV string 1 to 8 ex:  2,3
 	},
 	["in%s"] = {
 		devtype="urn:schemas-upnp-org:device:BinaryLight:1",
@@ -931,6 +938,8 @@ function UserSetPowerTarget(lul_device,newTargetValue)
 		end
 		-- altid is the relay ID on the WES
 		local childid = luup.devices[lul_device].id;
+		-- prefix rl1W should be replaced by rl
+		childid = string.gsub(childid, "1w", "")
 		luup.variable_set("urn:upnp-org:serviceId:SwitchPower1", "Status", newTargetValue, lul_device)
 		local xmldata = WesHttpCall(lul_device,"RL.cgx",childid.."="..val)
 	else
@@ -1116,6 +1125,8 @@ function startupDeferred(lul_device)
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
 	local credentials  = getSetVariable(WES_SERVICE, "Credentials", lul_device, "")
 	local tempsensors  = getSetVariable(WES_SERVICE, "TempSensors", lul_device, "")
+	local AnalogInputs  = getSetVariable(WES_SERVICE, "AnalogInputs", lul_device, "")
+	local Relais1W  = getSetVariable(WES_SERVICE, "Relais1W", lul_device, "")
 	local VirtualSwitches  = getSetVariable(WES_SERVICE, "VirtualSwitches", lul_device, "")
 	local PulseCounters  = getSetVariable(WES_SERVICE, "PulseCounters", lul_device, "")
 	local AnalogClamps = getSetVariable(WES_SERVICE, "AnalogClamps", lul_device, "")
