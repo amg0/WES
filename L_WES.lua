@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.74b"
+local version = "v0.75"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -323,6 +323,29 @@ c Vv7 <VARIABLE7>%.02f</VARIABLE7>
 c Vv8 <VARIABLE8>%.02f</VARIABLE8>
 t </variables>
 c WRo
+t <vera>
+c WRn <nCartesRelais1W>%d</nCartesRelais1W>
+t <Carte1>
+c WR01 <NOM1>%s</NOM1>
+c WR02 <NOM2>%s</NOM2>
+c WR03 <NOM3>%s</NOM3>
+c WR04 <NOM4>%s</NOM4>
+c WR05 <NOM5>%s</NOM5>
+c WR06 <NOM6>%s</NOM6>
+c WR07 <NOM7>%s</NOM7>
+c WR08 <NOM8>%s</NOM8>
+t </Carte1>
+t <Carte2>
+c WR11 <NOM1>%s</NOM1>
+c WR12 <NOM2>%s</NOM2>
+c WR13 <NOM3>%s</NOM3>
+c WR14 <NOM4>%s</NOM4>
+c WR15 <NOM5>%s</NOM5>
+c WR16 <NOM6>%s</NOM6>
+c WR17 <NOM7>%s</NOM7>
+c WR18 <NOM8>%s</NOM8>
+t </Carte2>
+t </vera>
 t </data>
 ]]
 
