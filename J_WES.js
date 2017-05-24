@@ -68,15 +68,15 @@ function wes_Settings(deviceID) {
 	var poll = get_device_state(deviceID,  wes_Svs, 'RefreshPeriod',1);
 	var ip_address = jsonp.ud.devices[findDeviceIdx(deviceID)].ip;
 	var configs = [
+		{ name: "UserFTP", label: "User pour FTP" , placeholder: "doit etre configure sur le WES, par default adminftp"},
+		{ name: "PasswordFTP", type:"password", label: "Password pour FTP" , placeholder: "doit etre configure sur le WES, par default wesftp"},
 		{ name: "NamePrefix", label: "Prefix pour les noms" , placeholder: "Prefix ou vide"},
 		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes" , func: goodcsv},
 		{ name: "AnalogInputs", label: "Inputs Analogiques" , placeholder: "comma separated list of indexes", func: goodcsv},
 		{ name: "Relais1W", label: "Relais 1Wire" , placeholder: "comma separated list of relais number", func: goodcsv},
 		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes", func: goodcsv},
 		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes", func: goodcsv},
-		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes", func: goodcsv},
-		{ name: "UserFTP", label: "User pour FTP" , placeholder: "doit etre configure sur le WES, par default adminftp"},
-		{ name: "PasswordFTP", label: "Password pour FTP" , placeholder: "doit etre configure sur le WES, par default wesftp"}
+		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes", func: goodcsv}
 	];
 
 	var htmlConfigs = "";
@@ -85,12 +85,13 @@ function wes_Settings(deviceID) {
 		htmlConfigs += '	\
 					<div class="form-group col-xs-6">																	\
 						<label for="wes-{0}">{1}</label>		\
-						<input type="text" class="form-control" id="wes-{0}" placeholder="{2}" value="{3}">	\
+						<input type="{3}" class="form-control" id="wes-{0}" placeholder="{2}" value="{4}">	\
 					</div>																										\
 		'.format(
 			obj.name,
 			obj.label,
 			obj.placeholder,
+			obj.type || "text",
 			value
 		);
 	});
@@ -99,22 +100,24 @@ function wes_Settings(deviceID) {
       <div id="wes-settings">                                           \
         <form id="wes-settings-form">                        \
 					<div class="form-group col-xs-6">																	\
-						<label for="wes-username">User Name</label>		\
-						<input type="text" class="form-control" id="wes-username" placeholder="User">	\
-					</div>																										\
-					<div class="form-group col-xs-6">																	\
-						<label for="wes-pwd">Password</label>			\
-						<input type="password" class="form-control" id="wes-pwd" placeholder="Password">	\
-					</div>																								\
-					<div class="form-group col-xs-6">																	\
 						<label for="wes-ipaddr">IP Addr</label>		\
 						<input type="text" class="form-control" id="wes-ipaddr" placeholder="xx.xx.xx.xx">	\
 					</div>																										\
 					<div class="form-group col-xs-6">																	\
 						<label for="wes-RefreshPeriod">Polling in sec</label>			\
 						<input type="number" min="1" max="600" class="form-control" id="wes-RefreshPeriod" placeholder="5">	\
-					</div> '+htmlConfigs+'																								\
-					<button id="wes-submit" type="submit" class="btn btn-default">Submit</button>	\
+					</div> 																								\
+					<div class="form-group col-xs-6">																	\
+						<label for="wes-username">User Name</label>		\
+						<input type="text" class="form-control" id="wes-username" placeholder="User">	\
+					</div>																										\
+					<div class="form-group col-xs-6">																	\
+						<label for="wes-pwd">Password</label>			\
+						<input type="password" class="form-control" id="wes-pwd" placeholder="Password">	\
+					</div>	'+htmlConfigs+'																							\
+					<div class="form-group col-xs-12">																	\
+						<button id="wes-submit" type="submit" class="btn btn-primary">Submit</button>	\
+					</div>																										\
 				</form>                                                 \
       </div>                                                    \
     '		

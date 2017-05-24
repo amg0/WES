@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.75"
+local version = "v0.77"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -361,31 +361,34 @@ local xpath = require("xpath")
 -- local modurl = require "socket.url"
 
 local xmlmap = {
-	["/data/info/firmware/text()"] = { variable="Firmware" , default="" },
-	["/data/variables/*"] = { variable="%s" , default="" },
-	["/data/*/PAP/text()"] = { variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
-	["/data/*/vera/KWHJ/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
-	["/data/*/vera/IHP/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
-	["/data/temp/*/text()"] = { variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
-	["/data/temp/vera/NOM%s/text()"] = { attribute="name" ,child="SONDE%s" , default="" , mask=NAME_PREFIX.."%s"},
-	["/data/relais/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
-	["/data/relais/vera/NOM%s/text()"] = { attribute="name" , child="rl%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/relais1W/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s" , default=""},
-	["/data/analogique/*/text()"] = { variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
+	["/data/info/firmware/text()"] = 					{ variable="Firmware" , default="" },
+	["/data/variables/*"] = 								{ variable="%s" , default="" },
+	["/data/vera/nCartesRelais1W/text()"] = 	{ variable="nCartesRelais1W" ,  default="0"},
+	["/data/*/PAP/text()"] = 								{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/*/vera/KWHJ/text()"] = 					{ variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/*/vera/IHP/text()"] = 						{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/temp/*/text()"] = 							{ variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
+	["/data/temp/vera/NOM%s/text()"] = 			{ attribute="name" ,child="SONDE%s" , default="" , mask=NAME_PREFIX.."%s"},
+	["/data/relais/*/text()"] = 							{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
+	["/data/relais/vera/NOM%s/text()"] = 		{ attribute="name" , child="rl%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/analogique/*/text()"] = 					{ variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
 	["/data/analogique/vera/NOM%s/text()"] = { attribute="name" ,child="ad%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/switch_virtuel/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
+	["/data/switch_virtuel/*/text()"] = 				{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
 	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/entree/*/text()"] = { variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
-	["/data/entree/vera/NOM%s/text()"] = { attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/impulsion/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+	["/data/entree/*/text()"] = 							{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
+	["/data/entree/vera/NOM%s/text()"] = 		{ attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/impulsion/INDEX%s/text()"] = 		{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
-	["/data/impulsion/vera/NOM%s/text()"] = { attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/INDEX%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/I%s/text()"] = { variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/vera/NOM%s/text()"] = { attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/vera/CONSOJ%s/text()"] = { variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/tic%s/vera/caption/text()"] = { attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/impulsion/vera/NOM%s/text()"] = 	{ attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/pince/INDEX%s/text()"] = 				{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/I%s/text()"] = 						{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/NOM%s/text()"] = 		{ attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/tic%s/vera/caption/text()"] = 			{ attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/relais1W/*/text()"] = 						{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s", offset=100, default=""},
 }
+
+
 	-- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 
 -- altid is the object ID ( like the relay ID ) on the WES server
@@ -910,6 +913,16 @@ local function prepareXMLmap(lul_device)
 			v.mask  = v.mask:gsub(NAME_PREFIX,NamePrefix,1)
 		end
 	end
+
+	-- init XML Map
+	-- ["/data/vera/Carte1/*/text()"] = { attribute="name", child="rl1w%s", offset=100, default="", mask=NAME_PREFIX.."%s"},
+	local nCartesRelais1W = getSetVariable(WES_SERVICE,"nCartesRelais1W", lul_device, 0)
+	for i=1,nCartesRelais1W do
+		local k = string.format("/data/vera/Carte%d/*/text()",i)
+		local v = { attribute="name", child="rl1w%s", offset=100+(i-1)*10, default="", mask=NAME_PREFIX.."%s"}
+		xmlmap[k]=v
+	end
+	debug(string.format("xmlmap initialized to %s",json.encode(xmlmap)))
 end
 
 local function createChildren(lul_device)
@@ -983,9 +996,9 @@ function getCurrentTemperature(lul_device)
 	return luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
 end
 
-local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask)
+local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask,child_offset)
 	service = service or WES_SERVICE
-	debug( string.format("xpath:%s child:%s service:%s variable:%s attribute:%s default:%s",xp,child_target or "", service or "", variable or "", attribute or "", default_value or "") )
+	debug( string.format("doload xpath:%s child:%s service:%s variable:%s attribute:%s default:%s offset:%s",xp,child_target or "", service or "", variable or "", attribute or "", default_value or "",child_offset) )
 	local map_iteration = {1}
 	local child_iteration = {}
 	if (child_target~=nil) then
@@ -999,8 +1012,8 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 		end
 	end
 	local singleton = (tablelength(child_iteration)==0)
-	
-	if (string.match(xp,"%%")) then
+	local iterative_key = string.match(xp,"%%")
+	if (iterative_key) then
 		map_iteration = child_iteration
 	end
 	
@@ -1012,43 +1025,61 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 		local nodes = xpath.selectNodes(lomtab,xpath_key)
 		debug( string.format("xpath key:%s XML node result %s",xpath_key,json.encode(nodes) ) )
 		for i,n in pairs(nodes) do
-			-- determine value to keep
-			local value = n or default_value
-			local var_name = variable or attribute
-			if (xpath_key:sub(-1)=="*") then
-				var_name = string.format(var_name,n.tag)
-				value = n[1]
-			end
-			if (value=="OFF") then
-				value = 0
-			elseif (value=="ON") then
-				value = 1
-			end
-
-			-- determine target child
-			local target_device = lul_device
-			if (child_target~=nil) then
-				local child_id = child_iteration[child_nth] or ""
-				local child_name = string.format(child_target,child_id)
-				target_device = findChild( lul_device, child_name )
-				child_nth = child_nth +1
-			end
-
-			-- save value
-			if (target_device ~= nil ) then
-				-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
-				if (mask~=nil) then
-					value = string.format(mask,value)
+			-- XML child element appear as empty string, skip them as we do only key with text() or direct key with /*
+			if (n ~= " ") then
+				-- determine value to keep
+				local value = n or default_value
+				local var_name = variable or attribute
+				if (xpath_key:sub(-1)=="*") then
+					var_name = string.format(var_name,n.tag)
+					value = n[1]
 				end
-				if (variable~=nil) then
-					setVariableIfChanged(service, var_name, value, target_device)
-				else
-					if (attribute~=nil) then
-						setAttrIfChanged(var_name, value, target_device)
+				if (value=="OFF") then
+					value = 0
+				elseif (value=="ON") then
+					value = 1
+				end
+
+				-- determine target child
+				local target_device = lul_device
+				if (child_target~=nil) then
+					-- in iterative_key, the idx is the child id
+					-- in normal key mode, the index in XML nodes is the index which is based on offset
+					local child_id = nil
+					if (iterative_key) then
+						child_id = idx
+					else
+						if (i+child_offset == tonumber(child_iteration[child_nth] )) then
+							child_id = child_iteration[child_nth] or ""
+						end
+					end
+					if ( child_id ~= nil ) then
+						target_device = findChild( lul_device, string.format(child_target,child_id) )
+						child_nth = child_nth +1
+					else
+						debug( string.format("child_id not found in target:%s, iterative_key:%s idx:%s i:%s offset:%s child_nth:%s child_iteration:%s",child_target, tostring(iterative_key ~=nil ),idx,i,child_offset,child_nth, json.encode(child_iteration) ) )
+						target_device = nil
 					end
 				end
-			else
-				debug( string.format("target_device is null, child_nth=%s, child_iteration=%s",child_nth, json.encode(child_iteration))) 
+
+				-- save value
+				if (target_device ~= nil ) then
+					-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
+					if (mask~=nil) then
+						value = string.format(mask,value)
+					end
+					if (variable~=nil) then
+						setVariableIfChanged(service, var_name, value, target_device)
+					else
+						if (attribute~=nil) then
+							setAttrIfChanged(var_name, value, target_device)
+						end
+					end
+				else
+					if (child_id~=nil) then
+						warning( string.format("Unexpected error : target_device is null, name should have been: %s",string.format(child_target,child_id)) )
+					end
+				end
 			end
 		end
 	end
@@ -1058,7 +1089,7 @@ local function loadWesData(lul_device,xmldata)
 	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
 	local lomtab = lom.parse(xmldata)
 	for xp,v in pairs(xmlmap) do
-		doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask)
+		doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.offset or 0)
 	end
 	
 	-- load tic data
@@ -1124,6 +1155,7 @@ end
 local function startEngine(lul_device)
 	debug(string.format("startEngine(%s)",lul_device))
 	lul_device = tonumber(lul_device)
+
 	local xmldata = WesHttpCall(lul_device,CGX_FILE)
 	-- local xmldata = WesHttpCall(lul_device,"xml/zones/zonesDescription16IP.xml")
 	if (xmldata ~= nil) then
@@ -1215,7 +1247,6 @@ function initstatus(lul_device)
 	this_device = lul_device
 	log("initstatus("..lul_device..") starting version: "..version)
 	checkVersion(lul_device)
-	math.randomseed( os.time() )
 	hostname = getIP()
 	local delay = 1		-- delaying first refresh by x seconds
 	debug("initstatus("..lul_device..") startup for Root device, delay:"..delay)
