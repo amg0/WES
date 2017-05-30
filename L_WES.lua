@@ -385,7 +385,9 @@ local xmlmap = {
 	["/data/pince/INDEX%s/text()"] = 				{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/I%s/text()"] = 						{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/vera/NOM%s/text()"] = 		{ attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH,Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/CONSOM%s/text()"] = 	{ variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/CONSOA%s/text()"] = 	{ variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/tic%s/vera/caption/text()"] = 			{ attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/relais1W/*/text()"] = 						{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s", offset=100, default=""},
 }
@@ -1091,7 +1093,14 @@ local function loadWesData(lul_device,xmldata)
 	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
 	local lomtab = lom.parse(xmldata)
 	for xp,v in pairs(xmlmap) do
-		doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.offset or 0)
+		if (v.variable ~=nil ) then
+			local parts = v.variable:split(",")
+			for k,var in pairs(parts) do
+				doload(lul_device, lomtab, xp, v.child , v.service, var, v.attribute, v.default, v.mask, v.offset or 0)
+			end
+		else
+			doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.offset or 0)
+		end
 	end
 	
 	-- load tic data
