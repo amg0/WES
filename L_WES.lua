@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.78"
+local version = "v0.79"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -383,7 +383,6 @@ c WR18 <NOM8>%s</NOM8>
 t </Carte2>
 t </vera>
 t </data>
-
 ]]
 
 local mime = require('mime')
@@ -1045,6 +1044,35 @@ function getCurrentTemperature(lul_device)
 	return luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
 end
 
+
+local function saveDeviceVariable(target_device, mask, func, var_name, service, value )
+	if (target_device ~= nil ) then
+		-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
+		if (mask~=nil) then
+			value = string.format(mask,value)
+		elseif (func~=nil) then
+			value = (func)(target_device,value)
+		end
+		setVariableIfChanged(service, var_name, value, target_device)
+	else
+		-- warning( string.format("target_device is null"))
+	end
+end
+
+local function saveDeviceAttribute(target_device, mask, func, var_name, service, value )
+	if (target_device ~= nil ) then
+		-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
+		if (mask~=nil) then
+			value = string.format(mask,value)
+		elseif (func~=nil) then
+			value = (func)(target_device,value)
+		end
+		setAttrIfChanged(var_name, value, target_device)
+	else
+		-- warning( string.format("target_device is null"))
+	end
+end
+
 local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask,func,child_offset)
 	service = service or WES_SERVICE
 	debug( string.format("doload xpath:%s child:%s service:%s variable:%s attribute:%s default:%s offset:%s",xp,child_target or "", service or "", variable or "", attribute or "", default_value or "",child_offset) )
@@ -1112,25 +1140,12 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 				end
 
 				-- save value
-				if (target_device ~= nil ) then
-					-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
-					if (mask~=nil) then
-						value = string.format(mask,value)
-					elseif (func~=nil) then
-						value = (func)(target_device,value)
-					end
-					if (variable~=nil) then
-						setVariableIfChanged(service, var_name, value, target_device)
-					else
-						if (attribute~=nil) then
-							setAttrIfChanged(var_name, value, target_device)
-						end
-					end
-				else
-					if (child_id~=nil) then
-						warning( string.format("Unexpected error : target_device is null, name should have been: %s",string.format(child_target,child_id)) )
-					end
+				if (variable~=nil) then
+					saveDeviceVariable( target_device, mask, func, var_name, service, value )
+				elseif (attribute~=nil) then
+					saveDeviceAttribute( target_device, mask, func, var_name, service, value )
 				end
+				
 			end
 		end
 	end
