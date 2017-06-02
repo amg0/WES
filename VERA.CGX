@@ -134,6 +134,7 @@ c pp4 <PULSE4>%d</PULSE4>
 c pIU4<INDEX4>%.0f</INDEX4>
 t <vera>
 c pu1 <PULSEPL1>%d</PULSEPL1>
+c pCh1 <CONSOV1>%s</CONSOV1>
 c pCj1 <CONSOJ1>%s</CONSOJ1>
 c pCm1 <CONSOM1>%s</CONSOM1>
 c pCa1 <CONSOA1>%s</CONSOA1>
@@ -145,6 +146,7 @@ c pU13<WH>%s</WH>
 c pU14<KWH>%s</KWH>
 t </cpt1>
 c pu2  <PULSEPL2>%d</PULSEPL2>
+c pCh2 <CONSOV2>%s</CONSOV2>
 c pCj2 <CONSOJ2>%s</CONSOJ2>
 c pCm2 <CONSOM2>%s</CONSOM2>
 c pCa2 <CONSOA2>%s</CONSOA2>
@@ -155,6 +157,8 @@ c pU22<M3>%s</M3>
 c pU23<WH>%s</WH>
 c pU24<KWH>%s</KWH>
 t </cpt2>
+c pu3  <PULSEPL3>%d</PULSEPL3>
+c pCh3 <CONSOV3>%s</CONSOV3>
 c pCj3 <CONSOJ3>%s</CONSOJ3>
 c pCm3 <CONSOM3>%s</CONSOM3>
 c pCa3 <CONSOA3>%s</CONSOA3>
@@ -165,6 +169,8 @@ c pU32<M3>%s</M3>
 c pU33<WH>%s</WH>
 c pU34<KWH>%s</KWH>
 t </cpt3>
+c pu4  <PULSEPL4>%d</PULSEPL4>
+c pCh4 <CONSOV4>%s</CONSOV4>
 c pCj4 <CONSOJ4>%s</CONSOJ4>
 c pCm4 <CONSOM4>%s</CONSOM4>
 c pCa4 <CONSOA4>%s</CONSOA4>
@@ -188,18 +194,22 @@ c P A4 <I4>%.02f</I4>
 c P W4 <INDEX4>%d</INDEX4>
 t <vera>
 c Pn1 <NOM1>%s</NOM1>
+c P P1 <VA1>%d</VA1>
 c PCj1 <CONSOJ1>%.02f</CONSOJ1>
 c PCm1 <CONSOM1>%.02f</CONSOM1>
 c PCa1 <CONSOA1>%.02f</CONSOA1>
 c Pn2 <NOM2>%s</NOM2>
+c P P2 <VA2>%d</VA2>
 c PCj2 <CONSOJ2>%.02f</CONSOJ2>
 c PCm2 <CONSOM2>%.02f</CONSOM2>
 c PCa2 <CONSOA2>%.02f</CONSOA2>
 c Pn3 <NOM3>%s</NOM3>
+c P P3 <VA3>%d</VA3>
 c PCj3 <CONSOJ3>%.02f</CONSOJ3>
 c PCm3 <CONSOM3>%.02f</CONSOM3>
 c PCa3 <CONSOA3>%.02f</CONSOA3>
 c Pn4 <NOM4>%s</NOM4>
+c P P4 <VA4>%d</VA4>
 c PCj4 <CONSOJ4>%.02f</CONSOJ4>
 c PCm4 <CONSOM4>%.02f</CONSOM4>
 c PCa4 <CONSOA4>%.02f</CONSOA4>

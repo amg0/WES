@@ -215,18 +215,22 @@ c P A4 <I4>%.02f</I4>
 c P W4 <INDEX4>%d</INDEX4>
 t <vera>
 c Pn1 <NOM1>%s</NOM1>
+c P P1 <VA1>%d</VA1>
 c PCj1 <CONSOJ1>%.02f</CONSOJ1>
 c PCm1 <CONSOM1>%.02f</CONSOM1>
 c PCa1 <CONSOA1>%.02f</CONSOA1>
 c Pn2 <NOM2>%s</NOM2>
+c P P2 <VA2>%d</VA2>
 c PCj2 <CONSOJ2>%.02f</CONSOJ2>
 c PCm2 <CONSOM2>%.02f</CONSOM2>
 c PCa2 <CONSOA2>%.02f</CONSOA2>
 c Pn3 <NOM3>%s</NOM3>
+c P P3 <VA3>%d</VA3>
 c PCj3 <CONSOJ3>%.02f</CONSOJ3>
 c PCm3 <CONSOM3>%.02f</CONSOM3>
 c PCa3 <CONSOA3>%.02f</CONSOA3>
 c Pn4 <NOM4>%s</NOM4>
+c P P4 <VA4>%d</VA4>
 c PCj4 <CONSOJ4>%.02f</CONSOJ4>
 c PCm4 <CONSOM4>%.02f</CONSOM4>
 c PCa4 <CONSOA4>%.02f</CONSOA4>
@@ -379,6 +383,7 @@ c WR18 <NOM8>%s</NOM8>
 t </Carte2>
 t </vera>
 t </data>
+
 ]]
 
 local mime = require('mime')
@@ -418,6 +423,7 @@ local xmlmap = {
 	["/data/impulsion/vera/NOM%s/text()"] = 	{ attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/pince/INDEX%s/text()"] = 			{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/I%s/text()"] = 				{ variable="Amps" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/VA%s/text()"] = 		{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/vera/NOM%s/text()"] = 		{ attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH,Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/vera/CONSOM%s/text()"] = 	{ variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
