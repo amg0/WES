@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.77"
+local version = "v0.78"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -154,22 +154,54 @@ c pIU3<INDEX3>%.0f</INDEX3>
 c pp4 <PULSE4>%d</PULSE4>
 c pIU4<INDEX4>%.0f</INDEX4>
 t <vera>
+c pu1 <PULSEPL1>%d</PULSEPL1>
+c pCh1 <CONSOV1>%s</CONSOV1>
 c pCj1 <CONSOJ1>%s</CONSOJ1>
 c pCm1 <CONSOM1>%s</CONSOM1>
 c pCa1 <CONSOA1>%s</CONSOA1>
 c pn1 <NOM1>%s</NOM1>
+t <cpt1>
+c pU11<LITRE>%s</LITRE>
+c pU12<M3>%s</M3>
+c pU13<WH>%s</WH>
+c pU14<KWH>%s</KWH>
+t </cpt1>
+c pu2  <PULSEPL2>%d</PULSEPL2>
+c pCh2 <CONSOV2>%s</CONSOV2>
 c pCj2 <CONSOJ2>%s</CONSOJ2>
 c pCm2 <CONSOM2>%s</CONSOM2>
 c pCa2 <CONSOA2>%s</CONSOA2>
 c pn2 <NOM2>%s</NOM2>
+t <cpt2>
+c pU21<LITRE>%s</LITRE>
+c pU22<M3>%s</M3>
+c pU23<WH>%s</WH>
+c pU24<KWH>%s</KWH>
+t </cpt2>
+c pu3  <PULSEPL3>%d</PULSEPL3>
+c pCh3 <CONSOV3>%s</CONSOV3>
 c pCj3 <CONSOJ3>%s</CONSOJ3>
 c pCm3 <CONSOM3>%s</CONSOM3>
 c pCa3 <CONSOA3>%s</CONSOA3>
 c pn3 <NOM3>%s</NOM3>
+t <cpt3>
+c pU31<LITRE>%s</LITRE>
+c pU32<M3>%s</M3>
+c pU33<WH>%s</WH>
+c pU34<KWH>%s</KWH>
+t </cpt3>
+c pu4  <PULSEPL4>%d</PULSEPL4>
+c pCh4 <CONSOV4>%s</CONSOV4>
 c pCj4 <CONSOJ4>%s</CONSOJ4>
 c pCm4 <CONSOM4>%s</CONSOM4>
 c pCa4 <CONSOA4>%s</CONSOA4>
 c pn4 <NOM4>%s</NOM4>
+t <cpt4>
+c pU41<LITRE>%s</LITRE>
+c pU42<M3>%s</M3>
+c pU43<WH>%s</WH>
+c pU44<KWH>%s</KWH>
+t </cpt4>
 t </vera>
 t </impulsion>
 t <pince>
@@ -377,15 +409,17 @@ local xmlmap = {
 	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/entree/*/text()"] = 							{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
 	["/data/entree/vera/NOM%s/text()"] = 		{ attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/impulsion/INDEX%s/text()"] = 		{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
-	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+	["/data/impulsion/PULSE%s/text()"] = 		{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+	["/data/impulsion/vera/PULSEPL%s/text()"] = { variable="PulsePerUnit" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+	["/data/impulsion/vera/CONSOV%s/text()"] = { variable="DayBefore,DisplayLine2" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , default=""},
+	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="Daily,DisplayLine1" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOM%s/text()"] = { variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOA%s/text()"] = { variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/NOM%s/text()"] = 	{ attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/INDEX%s/text()"] = 				{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/I%s/text()"] = 						{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/INDEX%s/text()"] = 			{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/I%s/text()"] = 				{ variable="Amps" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/vera/NOM%s/text()"] = 		{ attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH,Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH,Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/vera/CONSOM%s/text()"] = 	{ variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/pince/vera/CONSOA%s/text()"] = 	{ variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
 	["/data/tic%s/vera/caption/text()"] = 			{ attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
@@ -393,7 +427,13 @@ local xmlmap = {
 }
 
 
-	-- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+-- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+
+function pulseDevicePostDataLoad(lul_device,val)
+	debug(string.format("pulseDevicePostDataLoad(%s)",lul_device))
+	setVariableIfChanged("urn:upnp-org:serviceId:altui1", "DisplayLine1", val, lul_device)
+	return val
+end
 
 -- altid is the object ID ( like the relay ID ) on the WES server
 local childmap = {
@@ -452,7 +492,6 @@ local childmap = {
 		map="PulseCounters" -- user choice in a CSV string 1 to 8 ex:  2,3
 	}	
 }
-
 
 ------------------------------------------------
 -- Debug --
@@ -525,68 +564,68 @@ end
 -- Device Properties Utils
 ------------------------------------------------
 
-local function bxor (a,b)
-  local r = 0
-  for i = 0, 31 do
-	local x = a / 2 + b / 2
-	if x ~= math.floor (x) then
-	  r = r + 2^i
-	end
-	a = math.floor (a / 2)
-	b = math.floor (b / 2)
-  end
-  return r
-end
+-- local function bxor (a,b)
+  -- local r = 0
+  -- for i = 0, 31 do
+	-- local x = a / 2 + b / 2
+	-- if x ~= math.floor (x) then
+	  -- r = r + 2^i
+	-- end
+	-- a = math.floor (a / 2)
+	-- b = math.floor (b / 2)
+  -- end
+  -- return r
+-- end
 
-local function smpEncrypt(text, pass)
-  --log("smpEncrypt("..text..", "..pass..")")
-  local keysize = pass:len()
-  local textsize = text:len()
-  local iT, iP = 0,0
-	local out = {}
-  for iT=0,textsize-1 do
-	iP=(iT % keysize)
-	local c = string.byte(text:sub(iT+1,iT+1))
-	c = bxor( c , string.byte(pass:sub(iP+1,iP+1)) )
-	c = string.format("%c",c)
-		table.insert(out, c)
-  end
-	return table.concat(out)
-end
+-- local function smpEncrypt(text, pass)
+  -- log("smpEncrypt("..text..", "..pass..")")
+  -- local keysize = pass:len()
+  -- local textsize = text:len()
+  -- local iT, iP = 0,0
+	-- local out = {}
+  -- for iT=0,textsize-1 do
+	-- iP=(iT % keysize)
+	-- local c = string.byte(text:sub(iT+1,iT+1))
+	-- c = bxor( c , string.byte(pass:sub(iP+1,iP+1)) )
+	-- c = string.format("%c",c)
+		-- table.insert(out, c)
+  -- end
+	-- return table.concat(out)
+-- end
 
-local function smpDecrypt(text, pass)
-  --log("smpDecrypt("..text..", "..pass..")")
-  local keysize = pass:len()
-  local textsize = text:len()
-  local iT, iP = 0,0
-	local out = {}
-  for iT=0,textsize-1 do
-	iP=(iT % keysize)
-	local c = string.byte(text:sub(iT+1,iT+1))
-	c = bxor( c , string.byte(pass:sub(iP+1,iP+1)) )
-	c = string.char(c)
-		table.insert(out, c)
-  end
-	return table.concat(out)
-end
+-- local function smpDecrypt(text, pass)
+  -- log("smpDecrypt("..text..", "..pass..")")
+  -- local keysize = pass:len()
+  -- local textsize = text:len()
+  -- local iT, iP = 0,0
+	-- local out = {}
+  -- for iT=0,textsize-1 do
+	-- iP=(iT % keysize)
+	-- local c = string.byte(text:sub(iT+1,iT+1))
+	-- c = bxor( c , string.byte(pass:sub(iP+1,iP+1)) )
+	-- c = string.char(c)
+		-- table.insert(out, c)
+  -- end
+	-- return table.concat(out)
+-- end
 
-local function StrongEncrypt(str)
-  local key = luup.hw_key
-  local res= smpEncrypt(str, key)
-  return res
-end
+-- local function StrongEncrypt(str)
+  -- local key = luup.hw_key
+  -- local res= smpEncrypt(str, key)
+  -- return res
+-- end
 
-local function StrongDecrypt(str)
-  local key = luup.hw_key
-  local res =  smpDecrypt(str, key)
-  return res
-end
+-- local function StrongDecrypt(str)
+  -- local key = luup.hw_key
+  -- local res =  smpDecrypt(str, key)
+  -- return res
+-- end
 
 ------------------------------------------------
 -- Device Properties Utils
 ------------------------------------------------
 
-local function getSetVariable(serviceId, name, deviceId, default)
+function getSetVariable(serviceId, name, deviceId, default)
 	local curValue = luup.variable_get(serviceId, name, deviceId)
 	if (curValue == nil) then
 		curValue = default
@@ -595,7 +634,7 @@ local function getSetVariable(serviceId, name, deviceId, default)
 	return curValue
 end
 
-local function getSetVariableIfEmpty(serviceId, name, deviceId, default)
+function getSetVariableIfEmpty(serviceId, name, deviceId, default)
 	local curValue = luup.variable_get(serviceId, name, deviceId)
 	if (curValue == nil) or (curValue:trim() == "") then
 		curValue = default
@@ -604,7 +643,7 @@ local function getSetVariableIfEmpty(serviceId, name, deviceId, default)
 	return curValue
 end
 
-local function setVariableIfChanged(serviceId, name, value, deviceId)
+function setVariableIfChanged(serviceId, name, value, deviceId)
 	debug(string.format("setVariableIfChanged(%s,%s,%s,%s)",serviceId, name, value, deviceId))
 	local curValue = luup.variable_get(serviceId, name, tonumber(deviceId)) or ""
 	value = value or ""
@@ -613,7 +652,7 @@ local function setVariableIfChanged(serviceId, name, value, deviceId)
 	end
 end
 
-local function setAttrIfChanged(name, value, deviceId)
+function setAttrIfChanged(name, value, deviceId)
 	debug(string.format("setAttrIfChanged(%s,%s,%s)",name, value, deviceId))
 	local curValue = luup.attr_get(name, deviceId)
 	if ((value ~= curValue) or (curValue == nil)) then
@@ -1000,7 +1039,7 @@ function getCurrentTemperature(lul_device)
 	return luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
 end
 
-local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask,child_offset)
+local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask,func,child_offset)
 	service = service or WES_SERVICE
 	debug( string.format("doload xpath:%s child:%s service:%s variable:%s attribute:%s default:%s offset:%s",xp,child_target or "", service or "", variable or "", attribute or "", default_value or "",child_offset) )
 	local map_iteration = {1}
@@ -1071,6 +1110,8 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 					-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
 					if (mask~=nil) then
 						value = string.format(mask,value)
+					elseif (func~=nil) then
+						value = (func)(target_device,value)
 					end
 					if (variable~=nil) then
 						setVariableIfChanged(service, var_name, value, target_device)
@@ -1094,12 +1135,17 @@ local function loadWesData(lul_device,xmldata)
 	local lomtab = lom.parse(xmldata)
 	for xp,v in pairs(xmlmap) do
 		if (v.variable ~=nil ) then
-			local parts = v.variable:split(",")
-			for k,var in pairs(parts) do
-				doload(lul_device, lomtab, xp, v.child , v.service, var, v.attribute, v.default, v.mask, v.offset or 0)
+			local vparts = v.variable:split(",")
+			local sparts = { WES_SERVICE } 
+			if (v.service~=nil) then
+				sparts = v.service:split(",")
+			end
+			for k,var in pairs(vparts) do
+				local srv = sparts[k] or sparts[1]
+				doload(lul_device, lomtab, xp, v.child , srv, var, v.attribute, v.default, v.mask, v.func, v.offset or 0)
 			end
 		else
-			doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.offset or 0)
+			doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
 		end
 	end
 	
@@ -1120,6 +1166,7 @@ local function loadWesData(lul_device,xmldata)
 			end
 		end
 	end
+	
 	return true
 end
 
