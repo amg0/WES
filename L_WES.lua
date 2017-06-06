@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.79"
+local version = "v0.80"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -434,11 +434,11 @@ local xmlmap = {
 
 -- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 
-function pulseDevicePostDataLoad(lul_device,val)
-	debug(string.format("pulseDevicePostDataLoad(%s)",lul_device))
-	setVariableIfChanged("urn:upnp-org:serviceId:altui1", "DisplayLine1", val, lul_device)
-	return val
-end
+-- function pulseDevicePostDataLoad(lul_device,val)
+	-- debug(string.format("pulseDevicePostDataLoad(%s)",lul_device))
+	-- setVariableIfChanged("urn:upnp-org:serviceId:altui1", "DisplayLine1", val, lul_device)
+	-- return val
+-- end
 
 -- altid is the object ID ( like the relay ID ) on the WES server
 local childmap = {
@@ -1045,36 +1045,57 @@ function getCurrentTemperature(lul_device)
 end
 
 
-local function saveDeviceVariable(target_device, mask, func, var_name, service, value )
+local function saveDeviceVariable(target_device, mask, func, variable, service, value )
+	service = service or WES_SERVICE
 	if (target_device ~= nil ) then
-		-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
+		-- debug( string.format("service:%s variable:%s value:%s child:%s",service, variable, value, target_device) )
 		if (mask~=nil) then
 			value = string.format(mask,value)
 		elseif (func~=nil) then
 			value = (func)(target_device,value)
 		end
-		setVariableIfChanged(service, var_name, value, target_device)
+		
+		local var_parts = variable:split(",")
+		local ser_parts = service:split(",")
+		for k,v in pairs(var_parts) do
+			setVariableIfChanged( ser_parts[k] or ser_parts[1], v, value, target_device)
+		end
 	else
 		-- warning( string.format("target_device is null"))
 	end
 end
 
-local function saveDeviceAttribute(target_device, mask, func, var_name, service, value )
+local function saveDeviceAttribute(target_device, mask, func, attr, value )
+
 	if (target_device ~= nil ) then
-		-- debug( string.format("service:%s variable:%s value:%s child:%s",service, var_name, value, target_device) )
+		-- debug( string.format("variable:%s value:%s child:%s", attr, value, target_device) )
 		if (mask~=nil) then
 			value = string.format(mask,value)
 		elseif (func~=nil) then
 			value = (func)(target_device,value)
 		end
-		setAttrIfChanged(var_name, value, target_device)
+		setAttrIfChanged(attr, value, target_device)
 	else
 		-- warning( string.format("target_device is null"))
 	end
+end
+
+local function getValueFromXML(xpath_key, n, default_value)
+	local value = n or default_value
+	if (xpath_key:sub(-1)=="*") then
+		value = n[1]
+	end
+	
+	-- transform ON OFF into 1 0
+	if (value=="OFF") then
+		value = 0
+	elseif (value=="ON") then
+		value = 1
+	end
+	return value
 end
 
 local function doload(lul_device, lomtab, xp, child_target, service,  variable, attribute, default_value,mask,func,child_offset)
-	service = service or WES_SERVICE
 	debug( string.format("doload xpath:%s child:%s service:%s variable:%s attribute:%s default:%s offset:%s",xp,child_target or "", service or "", variable or "", attribute or "", default_value or "",child_offset) )
 	local map_iteration = {1}
 	local child_iteration = {}
@@ -1095,7 +1116,6 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 	end
 	
 	-- debug( string.format("map iteration will be:%s",json.encode(map_iteration)) )
-	service = service or WES_SERVICE
 	local child_nth=1		-- position in child_iteration array
 	for k,idx in pairs(map_iteration) do
 		local xpath_key = string.format(xp, idx)
@@ -1104,18 +1124,6 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 		for i,n in pairs(nodes) do
 			-- XML child element appear as empty string, skip them as we do only key with text() or direct key with /*
 			if (n ~= " ") then
-				-- determine value to keep
-				local value = n or default_value
-				local var_name = variable or attribute
-				if (xpath_key:sub(-1)=="*") then
-					var_name = string.format(var_name,n.tag)
-					value = n[1]
-				end
-				if (value=="OFF") then
-					value = 0
-				elseif (value=="ON") then
-					value = 1
-				end
 
 				-- determine target child
 				local target_device = lul_device
@@ -1139,11 +1147,18 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 					end
 				end
 
+				-- determine value to keep
+				local value = getValueFromXML( xpath_key, n, default_value )
+				
 				-- save value
 				if (variable~=nil) then
+					local var_name = variable
+					if (xpath_key:sub(-1)=="*") then
+						var_name = string.format(var_name,n.tag)
+					end
 					saveDeviceVariable( target_device, mask, func, var_name, service, value )
 				elseif (attribute~=nil) then
-					saveDeviceAttribute( target_device, mask, func, var_name, service, value )
+					saveDeviceAttribute( target_device, mask, func, attribute, value )
 				end
 				
 			end
@@ -1155,19 +1170,20 @@ local function loadWesData(lul_device,xmldata)
 	debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
 	local lomtab = lom.parse(xmldata)
 	for xp,v in pairs(xmlmap) do
-		if (v.variable ~=nil ) then
-			local vparts = v.variable:split(",")
-			local sparts = { WES_SERVICE } 
-			if (v.service~=nil) then
-				sparts = v.service:split(",")
-			end
-			for k,var in pairs(vparts) do
-				local srv = sparts[k] or sparts[1]
-				doload(lul_device, lomtab, xp, v.child , srv, var, v.attribute, v.default, v.mask, v.func, v.offset or 0)
-			end
-		else
-			doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
-		end
+		doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
+		-- if (v.variable ~=nil ) then
+			-- local vparts = v.variable:split(",")
+			-- local sparts = { WES_SERVICE } 
+			-- if (v.service~=nil) then
+				-- sparts = v.service:split(",")
+			-- end
+			-- for k,var in pairs(vparts) do
+				-- local srv = sparts[k] or sparts[1]
+				-- doload(lul_device, lomtab, xp, v.child , srv, var, v.attribute, v.default, v.mask, v.func, v.offset or 0)
+			-- end
+		-- else
+			-- doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
+		-- end
 	end
 	
 	-- load tic data
@@ -1204,7 +1220,7 @@ function refreshEngineCB(lul_device,norefresh)
 		UserMessage(string.format("missing ip addr or credentials for device "..lul_device),TASK_ERROR_PERM)
 	end
 
-	debug(string.format("programming next refreshEngineCB(%s) in %s",lul_device,period))
+	debug(string.format("programming next refreshEngineCB(%s) in %s sec",lul_device,period))
 	if (norefresh==false) then
 		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
 	end
