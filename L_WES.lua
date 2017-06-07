@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.80"
+local version = "v0.81"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
@@ -65,12 +65,12 @@ c a 3 <KWHABHP>%d</KWHABHP>
 c a 4 <KWHABHC>%d</KWHABHC>
 c a 5 <KWHARHP>%d</KWHARHP>
 c a 6 <KWHARHC>%d</KWHARHC>
-c m 1 <KWHMHP>%d</KWHMHP>
-c m 2 <KWHMHC>%d</KWHMHC>
-c m 3 <KWHMBHP>%d</KWHMBHP>
-c m 4 <KWHMBHC>%d</KWHMBHC>
-c m 5 <KWHMRHP>%d</KWHMRHP>
-c m 6 <KWHMRHC>%d</KWHMRHC>
+c m11 <KWHMHP>%d</KWHMHP>
+c m12 <KWHMHC>%d</KWHMHC>
+c m13 <KWHMBHP>%d</KWHMBHP>
+c m14 <KWHMBHC>%d</KWHMBHC>
+c m15 <KWHMRHP>%d</KWHMRHP>
+c m16 <KWHMRHC>%d</KWHMRHC>
 c s 1 <KWHSHP>%d</KWHSHP>
 c s 2 <KWHSHC>%d</KWHSHC>
 c s 3 <KWHSBHP>%d</KWHSBHP>
@@ -124,12 +124,12 @@ c A 3 <KWHABHP>%d</KWHABHP>
 c A 4 <KWHABHC>%d</KWHABHC>
 c A 5 <KWHARHP>%d</KWHARHP>
 c A 6 <KWHARHC>%d</KWHARHC>
-c M 1 <KWHMHP>%d</KWHMHP>
-c M 2 <KWHMHC>%d</KWHMHC>
-c M 3 <KWHMBHP>%d</KWHMBHP>
-c M 4 <KWHMBHC>%d</KWHMBHC>
-c M 5 <KWHMRHP>%d</KWHMRHP>
-c M 6 <KWHMRHC>%d</KWHMRHC>
+c m21 <KWHMHP>%d</KWHMHP>
+c m22 <KWHMHC>%d</KWHMHC>
+c m23 <KWHMBHP>%d</KWHMBHP>
+c m24 <KWHMBHC>%d</KWHMBHC>
+c m25 <KWHMRHP>%d</KWHMRHP>
+c m26 <KWHMRHC>%d</KWHMRHC>
 c S 1 <KWHSHP>%d</KWHSHP>
 c S 2 <KWHSHC>%d</KWHSHC>
 c S 3 <KWHSBHP>%d</KWHSBHP>
