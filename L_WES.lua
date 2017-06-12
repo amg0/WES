@@ -14,10 +14,237 @@ local DEBUG_MODE = false	-- controlled by UPNP action
 local version = "v0.81"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
+local DATACGX_FILE = "DATA.CGX"
 local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
 local NAME_PREFIX = "WES "		-- trailing space needed
 local json = require("dkjson")
 local hostname = nil
+local cgx_inserts = {
+	["t </tic1>"]= [[
+t <vera>
+c e n <caption>%s</caption>
+c Ti1 <IHP>%s</IHP>
+c Ti2 <IHC>%s</IHC>
+c a T <KWHA>%d</KWHA>
+c j T <KWHJ>%d</KWHJ>
+c a 1 <KWHAHP>%d</KWHAHP>
+c a 2 <KWHAHC>%d</KWHAHC>
+c a 3 <KWHABHP>%d</KWHABHP>
+c a 4 <KWHABHC>%d</KWHABHC>
+c a 5 <KWHARHP>%d</KWHARHP>
+c a 6 <KWHARHC>%d</KWHARHC>
+c m 1 <KWHMHP>%d</KWHMHP>
+c m 2 <KWHMHC>%d</KWHMHC>
+c m 3 <KWHMBHP>%d</KWHMBHP>
+c m 4 <KWHMBHC>%d</KWHMBHC>
+c m 5 <KWHMRHP>%d</KWHMRHP>
+c m 6 <KWHMRHC>%d</KWHMRHC>
+c s 1 <KWHSHP>%d</KWHSHP>
+c s 2 <KWHSHC>%d</KWHSHC>
+c s 3 <KWHSBHP>%d</KWHSBHP>
+c s 4 <KWHSBHC>%d</KWHSBHC>
+c s 5 <KWHSRHP>%d</KWHSRHP>
+c s 6 <KWHSRHC>%d</KWHSRHC>
+c j 1 <KWHJHP>%d</KWHJHP>
+c j 2 <KWHJHC>%d</KWHJHC>
+c j 3 <KWHJBHP>%d</KWHJBHP>
+c j 4 <KWHJBHC>%d</KWHJBHC>
+c j 5 <KWHJRHP>%d</KWHJRHP>
+c j 6 <KWHJRHC>%d</KWHJRHC>
+t </vera>]],
+	["t </tic2>"]= [[
+t <vera>
+c e N <caption>%s</caption>
+c TI1 <IHP>%s</IHP>
+c TI2 <IHC>%s</IHC>
+c A T <KWHA>%d</KWHA>
+c J T <KWHJ>%d</KWHJ>
+c A 1 <KWHAHP>%d</KWHAHP>
+c A 2 <KWHAHC>%d</KWHAHC>
+c A 3 <KWHABHP>%d</KWHABHP>
+c A 4 <KWHABHC>%d</KWHABHC>
+c A 5 <KWHARHP>%d</KWHARHP>
+c A 6 <KWHARHC>%d</KWHARHC>
+c m21 <KWHMHP>%d</KWHMHP>
+c m22 <KWHMHC>%d</KWHMHC>
+c m23 <KWHMBHP>%d</KWHMBHP>
+c m24 <KWHMBHC>%d</KWHMBHC>
+c m25 <KWHMRHP>%d</KWHMRHP>
+c m26 <KWHMRHC>%d</KWHMRHC>
+c S 1 <KWHSHP>%d</KWHSHP>
+c S 2 <KWHSHC>%d</KWHSHC>
+c S 3 <KWHSBHP>%d</KWHSBHP>
+c S 4 <KWHSBHC>%d</KWHSBHC>
+c S 5 <KWHSRHP>%d</KWHSRHP>
+c S 6 <KWHSRHC>%d</KWHSRHC>
+c J 1 <KWHJHP>%d</KWHJHP>
+c J 2 <KWHJHC>%d</KWHJHC>
+c J 3 <KWHJBHP>%d</KWHJBHP>
+c J 4 <KWHJBHC>%d</KWHJBHC>
+c J 5 <KWHJRHP>%d</KWHJRHP>
+c J 6 <KWHJRHC>%d</KWHJRHC>
+t </vera>]],
+	["t </impulsion>"]= [[
+t <vera>
+c pu1 <PULSEPL1>%d</PULSEPL1>
+c pCh1 <CONSOV1>%s</CONSOV1>
+c pCj1 <CONSOJ1>%s</CONSOJ1>
+c pCm1 <CONSOM1>%s</CONSOM1>
+c pCa1 <CONSOA1>%s</CONSOA1>
+c pn1 <NOM1>%s</NOM1>
+t <cpt1>
+c pU11<LITRE>%s</LITRE>
+c pU12<M3>%s</M3>
+c pU13<WH>%s</WH>
+c pU14<KWH>%s</KWH>
+t </cpt1>
+c pu2  <PULSEPL2>%d</PULSEPL2>
+c pCh2 <CONSOV2>%s</CONSOV2>
+c pCj2 <CONSOJ2>%s</CONSOJ2>
+c pCm2 <CONSOM2>%s</CONSOM2>
+c pCa2 <CONSOA2>%s</CONSOA2>
+c pn2 <NOM2>%s</NOM2>
+t <cpt2>
+c pU21<LITRE>%s</LITRE>
+c pU22<M3>%s</M3>
+c pU23<WH>%s</WH>
+c pU24<KWH>%s</KWH>
+t </cpt2>
+c pu3  <PULSEPL3>%d</PULSEPL3>
+c pCh3 <CONSOV3>%s</CONSOV3>
+c pCj3 <CONSOJ3>%s</CONSOJ3>
+c pCm3 <CONSOM3>%s</CONSOM3>
+c pCa3 <CONSOA3>%s</CONSOA3>
+c pn3 <NOM3>%s</NOM3>
+t <cpt3>
+c pU31<LITRE>%s</LITRE>
+c pU32<M3>%s</M3>
+c pU33<WH>%s</WH>
+c pU34<KWH>%s</KWH>
+t </cpt3>
+c pu4  <PULSEPL4>%d</PULSEPL4>
+c pCh4 <CONSOV4>%s</CONSOV4>
+c pCj4 <CONSOJ4>%s</CONSOJ4>
+c pCm4 <CONSOM4>%s</CONSOM4>
+c pCa4 <CONSOA4>%s</CONSOA4>
+c pn4 <NOM4>%s</NOM4>
+t <cpt4>
+c pU41<LITRE>%s</LITRE>
+c pU42<M3>%s</M3>
+c pU43<WH>%s</WH>
+c pU44<KWH>%s</KWH>
+t </cpt4>
+t </vera>]],
+["t </pince>"]=[[
+t <vera>
+c Pn1 <NOM1>%s</NOM1>
+c P P1 <VA1>%d</VA1>
+c PCj1 <CONSOJ1>%.02f</CONSOJ1>
+c PCm1 <CONSOM1>%.02f</CONSOM1>
+c PCa1 <CONSOA1>%.02f</CONSOA1>
+c Pn2 <NOM2>%s</NOM2>
+c P P2 <VA2>%d</VA2>
+c PCj2 <CONSOJ2>%.02f</CONSOJ2>
+c PCm2 <CONSOM2>%.02f</CONSOM2>
+c PCa2 <CONSOA2>%.02f</CONSOA2>
+c Pn3 <NOM3>%s</NOM3>
+c P P3 <VA3>%d</VA3>
+c PCj3 <CONSOJ3>%.02f</CONSOJ3>
+c PCm3 <CONSOM3>%.02f</CONSOM3>
+c PCa3 <CONSOA3>%.02f</CONSOA3>
+c Pn4 <NOM4>%s</NOM4>
+c P P4 <VA4>%d</VA4>
+c PCj4 <CONSOJ4>%.02f</CONSOJ4>
+c PCm4 <CONSOM4>%.02f</CONSOM4>
+c PCa4 <CONSOA4>%.02f</CONSOA4>
+t </vera>]],
+["t </temp>"]=[[
+t <vera>
+c W0N0 <NOM1>%s</NOM1>
+c W0N1 <NOM2>%s</NOM2>
+c W0N2 <NOM3>%s</NOM3>
+c W0N3 <NOM4>%s</NOM4>
+c W0N4 <NOM5>%s</NOM5>
+c W0N5 <NOM6>%s</NOM6>
+c W0N6 <NOM7>%s</NOM7>
+c W0N7 <NOM8>%s</NOM8>
+c W0N8 <NOM9>%s</NOM9>
+c W0N9 <NOM10>%s</NOM10>
+c W1N0 <NOM11>%s</NOM11>
+c W1N1 <NOM12>%s</NOM12>
+c W1N2 <NOM13>%s</NOM13>
+c W1N3 <NOM14>%s</NOM14>
+c W1N4 <NOM15>%s</NOM15>
+c W1N5 <NOM16>%s</NOM16>
+c W1N6 <NOM17>%s</NOM17>
+c W1N7 <NOM18>%s</NOM18>
+c W1N8 <NOM19>%s</NOM19>
+c W1N9 <NOM20>%s</NOM20>
+c W2N0 <NOM21>%s</NOM21>
+c W2N1 <NOM22>%s</NOM22>
+c W2N2 <NOM23>%s</NOM23>
+c W2N3 <NOM24>%s</NOM24>
+c W2N4 <NOM25>%s</NOM25>
+c W2N5 <NOM26>%s</NOM26>
+c W2N6 <NOM27>%s</NOM27>
+c W2N7 <NOM28>%s</NOM28>
+c W2N8 <NOM29>%s</NOM29>
+c W2N9 <NOM30>%s</NOM30>
+t </vera>]],
+["t </relais>"]=[[
+t <vera>
+c o n0 <NOM1>%s</NOM1>
+c o n1 <NOM2>%s</NOM2>
+t </vera>]],
+["t </entree>"]=[[
+t <vera>
+c l n1 <NOM1>%s</NOM1>
+c l n2 <NOM2>%s</NOM2>
+t </vera>]],
+["t </analogique>"]=[[
+t <vera>
+c l a1 <NOM1>%s</NOM1>
+c l a2 <NOM2>%s</NOM2>
+c l a3 <NOM3>%s</NOM3>
+c l a4 <NOM4>%s</NOM4>
+t </vera>]],
+["t </switch_virtuel>"]=[[
+t <vera>
+c l N1 <NOM1>%s</NOM1>
+c l N2 <NOM2>%s</NOM2>
+c l N3 <NOM3>%s</NOM3>
+c l N4 <NOM4>%s</NOM4>
+c l N5 <NOM5>%s</NOM5>
+c l N6 <NOM6>%s</NOM6>
+c l N7 <NOM7>%s</NOM7>
+c l N8 <NOM8>%s</NOM8>
+t </vera>]],
+["t </data>"]=[[
+t <vera>
+c WRn <nCartesRelais1W>%d</nCartesRelais1W>
+t <Carte1>
+c WR01 <NOM1>%s</NOM1>
+c WR02 <NOM2>%s</NOM2>
+c WR03 <NOM3>%s</NOM3>
+c WR04 <NOM4>%s</NOM4>
+c WR05 <NOM5>%s</NOM5>
+c WR06 <NOM6>%s</NOM6>
+c WR07 <NOM7>%s</NOM7>
+c WR08 <NOM8>%s</NOM8>
+t </Carte1>
+t <Carte2>
+c WR11 <NOM1>%s</NOM1>
+c WR12 <NOM2>%s</NOM2>
+c WR13 <NOM3>%s</NOM3>
+c WR14 <NOM4>%s</NOM4>
+c WR15 <NOM5>%s</NOM5>
+c WR16 <NOM6>%s</NOM6>
+c WR17 <NOM7>%s</NOM7>
+c WR18 <NOM8>%s</NOM8>
+t </Carte2>
+t </vera>]]
+}
+
 local vera_cgx = [[
 t <?xml version="1.0" encoding="utf-8" ?>
 t <data>
@@ -937,10 +1164,30 @@ function prepareWEScgx(lul_device)
 	local ftp = require("socket.ftp")
 	local userftp= getSetVariable(WES_SERVICE,"UserFTP", lul_device, "adminftp")
 	local passwordftp= getSetVariable(WES_SERVICE,"PasswordFTP", lul_device, "wesftp")
+	local lul_root = getRoot(lul_device)
+	local ip_address = luup.attr_get ('ip', lul_root )
+	local data_cgx_tbl = {}
 	-- luup.register_handler("myWES_Handler","WES_Handler")
 	-- local str = "coucou"
-	local f,e = ftp.put( {
-		host = "192.168.1.31",
+	
+	local f, e = ftp.get({
+		host = ip_address,
+		sink = ltn12.sink.table(data_cgx_tbl),
+		argument = DATACGX_FILE,
+		user = userftp,
+		password = passwordftp
+	})
+	debug(string.format("FTP get  file=%s f=%s e=%s",DATACGX_FILE,json.encode(f),json.encode(e)))
+	local data_cgx = table.concat(data_cgx_tbl)
+
+	local vera_cgx = data_cgx
+	for k,v in pairs(cgx_inserts) do
+		v = v:gsub("%%","%%%%")
+		vera_cgx = vera_cgx:gsub(k,v.."\n"..k)
+	end
+	
+	f,e = ftp.put( {
+		host = ip_address,
 		source = ltn12.source.string(vera_cgx),
 		argument = CGX_FILE,
 		user = userftp,
@@ -1217,7 +1464,7 @@ function refreshEngineCB(lul_device,norefresh)
 	if (xmldata ~= nil) then
 		loadWesData(lul_device,xmldata)
 	else
-		UserMessage(string.format("missing ip addr or credentials for device "..lul_device),TASK_ERROR_PERM)
+		UserMessage(string.format("missing ip addr or credentials or "..CGX_FILE.." file for device "..lul_device),TASK_ERROR_PERM)
 	end
 
 	debug(string.format("programming next refreshEngineCB(%s) in %s sec",lul_device,period))
@@ -1261,7 +1508,7 @@ local function startEngine(lul_device)
 		luup.call_delay("refreshEngineCB",period,tostring(lul_device))
 		return loadWesData(lul_device,xmldata)
 	else
-		UserMessage(string.format("missing ip addr or credentials for device "..lul_device),TASK_ERROR_PERM)
+		UserMessage(string.format("missing ip addr or credentials or "..CGX_FILE.." file for device "..lul_device),TASK_ERROR_PERM)
 	end
 	return true
 end
