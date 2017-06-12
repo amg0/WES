@@ -2,6 +2,7 @@
 VERA driver for Wes v2 serveur from cartelectronic.fr
 https://www.cartelectronic.fr/index.php?id_cms=8&controller=cms
 plugin sur le MCV store : http://apps.mios.com/plugin.php?id=8906
+Install instructions : https://github.com/amg0/WES/blob/master/Docs/Documentation%20Installation%20WES.pdf
 
 Fonctionalites: V0.80
 - les relais , les entrees digitales, les virtual switchs, les relais 1Wire: vue de l'etat dans vera et changement de l'etat par la UI de vera ou les scenes
