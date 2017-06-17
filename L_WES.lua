@@ -11,7 +11,7 @@ local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
 local devicetype = "urn:schemas-upnp-org:device:wes:1"
 local this_device = nil
 local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.82"
+local version = "v0.83"
 local UI7_JSON_FILE= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE = "DATA.CGX"
@@ -699,6 +699,81 @@ end
 ------------------------------------------------
 -- Communication TO WES system
 ------------------------------------------------
+-- myHttpGet("192.168.1.31",80,"/vera.cgx",5)
+local function myHttpGet(dst_ipaddr,dst_port,uri,timeout,usr,pwd)
+	local a,b,s
+	local result = {}
+	local command = string.format("GET %s HTTP/1.1\r\n",uri)
+	dst_port = dst_port or 80
+	timeout = timeout or 5
+
+	local auth = ""
+	if (usr~=nil) and (pwd~=nil) then
+		auth = "Authorization: Basic "..mime.b64(usr .. ":" .. pwd ) .. "\r\n"
+	end
+
+	local headers = [[
+Host: %s
+User-Agent: LuaSocket 3.0-rc1
+Accept: */*
+TE: trailers
+Connection: close, TE
+]]
+	headers = string.format(headers,dst_ipaddr)
+	headers = headers:gsub("\n","\r\n")
+
+	debug( "connect...")
+	local tcp,b = socket.tcp()
+	if (tcp==nil) then
+			error( string.format("Socket tcp creation failed. err:%s",b or ""))
+	else
+		tcp:settimeout( timeout )
+		s,b = tcp:connect (dst_ipaddr, dst_port) -- this should be server IP
+		if (s==nil) then
+			error( string.format("Socket connect to %s:%s failed, err:%s",dst_ipaddr,dst_port,b or ""))
+		else
+			debug( "send...")
+			tcp:settimeout(timeout)
+			a,b  = tcp:send(command..auth..headers)
+			if (a==nil) then
+				error( string.format("Socket send failed, err=%s",b or ""))
+			else
+				debug( "receive status..." )
+				a,b = tcp:receive('*l')
+				-- should be HTTP/1.1 200 OK
+				if (a==nil) or (a~="HTTP/1.1 200 OK") then
+					error( string.format("Socket received failed, received=%s , err=%s",a or "", b or ""))
+				else
+					debug("receive headers...")
+					repeat
+						a,b,s = tcp:receive('*l')
+						if (a~=nil) then
+							debug(string.format("header received: %s",a))
+						else
+							debug(string.format("b=%s s=%s",b,s))
+						end
+					until #a == 0	-- empty line received
+					debug("receive body...")
+					repeat 
+						a,b,s = tcp:receive('*l')
+						if (a~=nil) then
+							table.insert(result, a)
+						elseif (s~=nil) then
+							-- strange but apparently we receive a socket "close" while there is still some data in 's'
+							table.insert(result, s)
+						end
+					until b   -- that is, until "timeout" or "closed"
+					debug(string.format("closing... err:%s",b or ""))
+					tcp:close()	
+					return table.concat(result)
+				end
+			end
+			tcp:close()	
+		end
+	end
+	return nil,b
+end
+
 local function WesHttpCall(lul_device,cmd,data)
 	lul_device = tonumber(lul_device)
 	local lul_root = getRoot(lul_device)
@@ -718,22 +793,22 @@ local function WesHttpCall(lul_device,cmd,data)
 		return nil
 	end
 
-	local url = string.format ("http://%s/%s?%s", ip_address,cmd,data)
-	debug("url:"..url)
-
+	local uri = string.format ("/%s?%s", cmd,data)
 	local str = mime.unb64(credentials)
 	local parts = str:split(":")
-	local code,content,httpStatusCode  = luup.inet.wget(url,60,parts[1],parts[2])
-	if (code==0) then
+	
+	local txt,msg = myHttpGet(ip_address,80,uri,5,parts[1],parts[2])
+	
+	if (txt~=nil) then
 		-- success
-		debug(string.format("content:%s",content))
+		debug(string.format("content:%s",txt))
 		setVariableIfChanged(WES_SERVICE, "IconCode", 100, lul_device)
-		return content
+		return txt
 	else
 		setVariableIfChanged(WES_SERVICE, "IconCode", 0, lul_device)
 	end
 	-- failure
-	debug(string.format("failure=> code:%s httpStatusCode:%s",code,httpStatusCode))
+	debug(string.format("failure=> Error Message:%s",msg or ""))
 	return nil
 end
 
