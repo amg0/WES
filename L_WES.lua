@@ -6,19 +6,27 @@
 -- // This program is distributed in the hope that it will be useful,
 -- // but WITHOUT ANY WARRANTY; without even the implied warranty of
 -- // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE .
-local MSG_CLASS = "WES"
-local WES_SERVICE = "urn:upnp-org:serviceId:wes1"
-local devicetype = "urn:schemas-upnp-org:device:wes:1"
-local this_device = nil
-local DEBUG_MODE = false	-- controlled by UPNP action
-local version = "v0.83"
-local UI7_JSON_FILE= "D_WES_UI7.json"
+local MSG_CLASS 		= "WES"
+local WES_SERVICE 	= "urn:upnp-org:serviceId:wes1"
+local devicetype 		= "urn:schemas-upnp-org:device:wes:1"
+local this_device 	= nil
+local DEBUG_MODE 		= false	-- controlled by UPNP action
+local version 			= "v0.83"
+local UI7_JSON_FILE	= "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
-local DATACGX_FILE = "DATA.CGX"
-local CGX_FILE = "vera.cgx"		-- or data.cgx if extensions are not installed
-local NAME_PREFIX = "WES "		-- trailing space needed
+local DATACGX_FILE 	= "DATA.CGX"
+local CGX_FILE 			= "vera.cgx"		-- or data.cgx if extensions are not installed
+local NAME_PREFIX 	= "WES "		-- trailing space needed
+local hostname 			= ""
+
 local json = require("dkjson")
-local hostname = nil
+local mime = require('mime')
+local socket = require("socket")
+local http = require("socket.http")
+local ltn12 = require("ltn12")
+local lom = require("lxp.lom") -- http://matthewwild.co.uk/projects/luaexpat/lom.html
+local xpath = require("xpath")
+
 local cgx_inserts = {
 	["t </tic1>"]= [[
 t <vera>
@@ -245,60 +253,40 @@ t </Carte2>
 t </vera>]]
 }
 
-local mime = require('mime')
-local socket = require("socket")
-local http = require("socket.http")
-local ltn12 = require("ltn12")
-local lom = require("lxp.lom") -- http://matthewwild.co.uk/projects/luaexpat/lom.html
-local xpath = require("xpath")
-
--- local mime = require("mime")
--- local https = require ("ssl.https")
--- local modurl = require "socket.url"
-
 local xmlmap = {
 	["/data/info/firmware/text()"] = 					{ variable="Firmware" , default="" },
-	["/data/variables/*"] = 								{ variable="%s" , default="" },
+	["/data/variables/*"] = 									{ variable="%s" , default="" },
 	["/data/vera/nCartesRelais1W/text()"] = 	{ variable="nCartesRelais1W" ,  default="0"},
-	["/data/*/PAP/text()"] = 								{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
-	["/data/*/vera/KWHJ/text()"] = 					{ variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/*/PAP/text()"] = 									{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
+	["/data/*/vera/KWHJ/text()"] = 						{ variable="KWH" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
 	["/data/*/vera/IHP/text()"] = 						{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="tic%s" , default="0"},
-	["/data/temp/*/text()"] = 							{ variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
-	["/data/temp/vera/NOM%s/text()"] = 			{ attribute="name" ,child="SONDE%s" , default="" , mask=NAME_PREFIX.."%s"},
+	["/data/temp/*/text()"] = 								{ variable="CurrentTemperature" , service="urn:upnp-org:serviceId:TemperatureSensor1", child="SONDE%s" , default=""},
+	["/data/temp/vera/NOM%s/text()"] = 				{ attribute="name" ,child="SONDE%s" , default="" , mask=NAME_PREFIX.."%s"},
 	["/data/relais/*/text()"] = 							{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl%s" , default=""},
-	["/data/relais/vera/NOM%s/text()"] = 		{ attribute="name" , child="rl%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/relais/vera/NOM%s/text()"] = 			{ attribute="name" , child="rl%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/analogique/*/text()"] = 					{ variable="CurrentLevel" , service="urn:micasaverde-com:serviceId:GenericSensor1", child="ad%s" , default=""},
-	["/data/analogique/vera/NOM%s/text()"] = { attribute="name" ,child="ad%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/switch_virtuel/*/text()"] = 				{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
+	["/data/analogique/vera/NOM%s/text()"] = 	{ attribute="name" ,child="ad%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/switch_virtuel/*/text()"] = 			{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="vs%s" , default=""},
 	["/data/switch_virtuel/vera/NOM%s/text()"] = { attribute="name" , child="vs%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/entree/*/text()"] = 							{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="in%s" , default=""},
-	["/data/entree/vera/NOM%s/text()"] = 		{ attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/impulsion/PULSE%s/text()"] = 		{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+	["/data/entree/vera/NOM%s/text()"] = 			{ attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/impulsion/PULSE%s/text()"] = 			{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/PULSEPL%s/text()"] = { variable="PulsePerUnit" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOV%s/text()"] = { variable="DayBefore,DisplayLine2" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="Daily,DisplayLine1" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOM%s/text()"] = { variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/CONSOA%s/text()"] = { variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
 	["/data/impulsion/vera/NOM%s/text()"] = 	{ attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/INDEX%s/text()"] = 			{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/I%s/text()"] = 				{ variable="Amps" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/vera/VA%s/text()"] = 		{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/vera/NOM%s/text()"] = 		{ attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
-	["/data/pince/vera/CONSOJ%s/text()"] = 	{ variable="KWH,Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/vera/CONSOM%s/text()"] = 	{ variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/pince/vera/CONSOA%s/text()"] = 	{ variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
-	["/data/tic%s/vera/caption/text()"] = 			{ attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/pince/INDEX%s/text()"] = 					{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/I%s/text()"] = 							{ variable="Amps" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/VA%s/text()"] = 				{ variable="Watts" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/NOM%s/text()"] = 			{ attribute="name" , child="pa%s" , default="", mask=NAME_PREFIX.."%s"},
+	["/data/pince/vera/CONSOJ%s/text()"] = 		{ variable="KWH,Daily" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/CONSOM%s/text()"] = 		{ variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/pince/vera/CONSOA%s/text()"] = 		{ variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
+	["/data/tic%s/vera/caption/text()"] = 		{ attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
 	["/data/relais1W/*/text()"] = 						{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s", offset=100, default=""},
 }
-
-
--- ["/data/impulsion/PULSE%s/text()"] = { variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
-
--- function pulseDevicePostDataLoad(lul_device,val)
-	-- debug(string.format("pulseDevicePostDataLoad(%s)",lul_device))
-	-- setVariableIfChanged("urn:upnp-org:serviceId:altui1", "DisplayLine1", val, lul_device)
-	-- return val
--- end
 
 -- altid is the object ID ( like the relay ID ) on the WES server
 local childmap = {
@@ -379,35 +367,8 @@ function error(stuff)
 	log("error: " .. stuff, 1)
 end
 
-function string.starts(String,Start)
-   return string.sub(String,1,string.len(Start))==Start
-end
-
 local function isempty(s)
   return s == nil or s == ""
-end
-
----code from lolodomo DNLA plugin
-local function xml_decode(val)
-	  return val:gsub("&#38;", '&')
-				:gsub("&#60;", '<')
-				:gsub("&#62;", '>')
-				:gsub("&#34;", '"')
-				:gsub("&#39;", "'")
-				:gsub("&lt;", "<")
-				:gsub("&gt;", ">")
-				:gsub("&quot;", '"')
-				:gsub("&apos;", "'")
-				:gsub("&amp;", "&")
-end
-
----code from lolodomo DNLA plugin
-local function xml_encode(val)
-	  return val:gsub("&", "&amp;")
-				:gsub("<", "&lt;")
-				:gsub(">", "&gt;")
-				:gsub('"', "&quot;")
-				:gsub("'", "&apos;")
 end
 
 local function extractTagValue(xml)
@@ -428,68 +389,6 @@ end
 ------------------------------------------------
 -- Device Properties Utils
 ------------------------------------------------
-
--- local function bxor (a,b)
-  -- local r = 0
-  -- for i = 0, 31 do
-	-- local x = a / 2 + b / 2
-	-- if x ~= math.floor (x) then
-	  -- r = r + 2^i
-	-- end
-	-- a = math.floor (a / 2)
-	-- b = math.floor (b / 2)
-  -- end
-  -- return r
--- end
-
--- local function smpEncrypt(text, pass)
-  -- log("smpEncrypt("..text..", "..pass..")")
-  -- local keysize = pass:len()
-  -- local textsize = text:len()
-  -- local iT, iP = 0,0
-	-- local out = {}
-  -- for iT=0,textsize-1 do
-	-- iP=(iT % keysize)
-	-- local c = string.byte(text:sub(iT+1,iT+1))
-	-- c = bxor( c , string.byte(pass:sub(iP+1,iP+1)) )
-	-- c = string.format("%c",c)
-		-- table.insert(out, c)
-  -- end
-	-- return table.concat(out)
--- end
-
--- local function smpDecrypt(text, pass)
-  -- log("smpDecrypt("..text..", "..pass..")")
-  -- local keysize = pass:len()
-  -- local textsize = text:len()
-  -- local iT, iP = 0,0
-	-- local out = {}
-  -- for iT=0,textsize-1 do
-	-- iP=(iT % keysize)
-	-- local c = string.byte(text:sub(iT+1,iT+1))
-	-- c = bxor( c , string.byte(pass:sub(iP+1,iP+1)) )
-	-- c = string.char(c)
-		-- table.insert(out, c)
-  -- end
-	-- return table.concat(out)
--- end
-
--- local function StrongEncrypt(str)
-  -- local key = luup.hw_key
-  -- local res= smpEncrypt(str, key)
-  -- return res
--- end
-
--- local function StrongDecrypt(str)
-  -- local key = luup.hw_key
-  -- local res =  smpDecrypt(str, key)
-  -- return res
--- end
-
-------------------------------------------------
--- Device Properties Utils
-------------------------------------------------
-
 function getSetVariable(serviceId, name, deviceId, default)
 	local curValue = luup.variable_get(serviceId, name, deviceId)
 	if (curValue == nil) then
@@ -537,22 +436,6 @@ local function getIP()
 	local ip = mySocket:getsockname ()
 	mySocket: close()
 	return ip or "127.0.0.1"
-end
-
-------------------------------------------------
--- Check UI7
-------------------------------------------------
-local function checkVersion(lul_device)
-	local ui7Check = luup.variable_get(WES_SERVICE, "UI7Check", lul_device) or ""
-	if ui7Check == "" then
-		luup.variable_set(WES_SERVICE, "UI7Check", "false", lul_device)
-		ui7Check = "false"
-	end
-	if( luup.version_branch == 1 and luup.version_major == 7 and ui7Check == "false") then
-		luup.variable_set(WES_SERVICE, "UI7Check", "true", lul_device)
-		luup.attr_set("device_json", UI7_JSON_FILE, lul_device)
-		luup.reload()
-	end
 end
 
 ------------------------------------------------
@@ -700,7 +583,8 @@ end
 -- Communication TO WES system
 ------------------------------------------------
 -- myHttpGet("192.168.1.31",80,"/vera.cgx",5)
-local function myHttpGet(dst_ipaddr,dst_port,uri,timeout,usr,pwd)
+local function myHttpGet(dst_ipaddr,dst_port,uri,timeout,credentials)
+	debug( string.format("myHttpGet(%s,%s,%s,%s,%s)",dst_ipaddr,dst_port,uri,timeout,credentials) )
 	local a,b,s
 	local result = {}
 	local command = string.format("GET %s HTTP/1.1\r\n",uri)
@@ -708,8 +592,8 @@ local function myHttpGet(dst_ipaddr,dst_port,uri,timeout,usr,pwd)
 	timeout = timeout or 5
 
 	local auth = ""
-	if (usr~=nil) and (pwd~=nil) then
-		auth = "Authorization: Basic "..mime.b64(usr .. ":" .. pwd ) .. "\r\n"
+	if (isempty(credentials) == false) then
+		auth = "Authorization: Basic ".. credentials .. "\r\n"
 	end
 
 	local headers = [[
@@ -722,7 +606,6 @@ Connection: close, TE
 	headers = string.format(headers,dst_ipaddr)
 	headers = headers:gsub("\n","\r\n")
 
-	debug( "connect...")
 	local tcp,b = socket.tcp()
 	if (tcp==nil) then
 			error( string.format("Socket tcp creation failed. err:%s",b or ""))
@@ -732,19 +615,18 @@ Connection: close, TE
 		if (s==nil) then
 			error( string.format("Socket connect to %s:%s failed, err:%s",dst_ipaddr,dst_port,b or ""))
 		else
-			debug( "send...")
 			tcp:settimeout(timeout)
 			a,b  = tcp:send(command..auth..headers)
 			if (a==nil) then
 				error( string.format("Socket send failed, err=%s",b or ""))
 			else
-				debug( "receive status..." )
 				a,b = tcp:receive('*l')
+				debug(string.format("Socket received: %s",a or ""))
 				-- should be HTTP/1.1 200 OK
 				if (a==nil) or (a~="HTTP/1.1 200 OK") then
-					error( string.format("Socket received failed, received=%s , err=%s",a or "", b or ""))
+					error( string.format("Socket received failed, err=%s",b or ""))
 				else
-					debug("receive headers...")
+					-- HEADERS
 					repeat
 						a,b,s = tcp:receive('*l')
 						if (a~=nil) then
@@ -753,7 +635,8 @@ Connection: close, TE
 							debug(string.format("b=%s s=%s",b,s))
 						end
 					until #a == 0	-- empty line received
-					debug("receive body...")
+
+					-- BODY
 					repeat 
 						a,b,s = tcp:receive('*l')
 						if (a~=nil) then
@@ -763,7 +646,7 @@ Connection: close, TE
 							table.insert(result, s)
 						end
 					until b   -- that is, until "timeout" or "closed"
-					debug(string.format("closing... err:%s",b or ""))
+
 					tcp:close()	
 					return table.concat(result)
 				end
@@ -794,22 +677,19 @@ local function WesHttpCall(lul_device,cmd,data)
 	end
 
 	local uri = string.format ("/%s?%s", cmd,data)
-	local str = mime.unb64(credentials)
-	local parts = str:split(":")
 	
-	local txt,msg = myHttpGet(ip_address,80,uri,5,parts[1],parts[2])
+	local txt,msg = myHttpGet(ip_address,80,uri,5,credentials)
 	
-	if (txt~=nil) then
-		-- success
-		debug(string.format("content:%s",txt))
-		setVariableIfChanged(WES_SERVICE, "IconCode", 100, lul_device)
-		return txt
-	else
+	if (txt==nil) then
+		-- failure
 		setVariableIfChanged(WES_SERVICE, "IconCode", 0, lul_device)
+		debug(string.format("failure=> Error Message:%s",msg or ""))
+		return nil
 	end
-	-- failure
-	debug(string.format("failure=> Error Message:%s",msg or ""))
-	return nil
+	-- success
+	debug(string.format("myHttpGet returns:%s",txt))
+	setVariableIfChanged(WES_SERVICE, "IconCode", 100, lul_device)
+	return txt
 end
 
 ------------------------------------------------------------------------------------------------
@@ -829,10 +709,8 @@ end
 function myWES_Handler(lul_request, lul_parameters, lul_outputformat)
 	debug('myWES_Handler: request is: '..tostring(lul_request))
 	debug('myWES_Handler: parameters is: '..json.encode(lul_parameters))
-	-- debug('WES_Handler: outputformat is: '..json.encode(lul_outputformat))
 	local lul_html = "";	-- empty return by default
 	local mime_type = "";
-	-- debug("hostname="..hostname)
 	if (hostname=="") then
 		hostname = getIP()
 		debug("now hostname="..hostname)
@@ -1290,6 +1168,22 @@ function startupDeferred(lul_device)
 	end
 
 	log("startup completed")
+end
+
+------------------------------------------------
+-- Check UI7
+------------------------------------------------
+local function checkVersion(lul_device)
+	local ui7Check = luup.variable_get(WES_SERVICE, "UI7Check", lul_device) or ""
+	if ui7Check == "" then
+		luup.variable_set(WES_SERVICE, "UI7Check", "false", lul_device)
+		ui7Check = "false"
+	end
+	if( luup.version_branch == 1 and luup.version_major == 7 and ui7Check == "false") then
+		luup.variable_set(WES_SERVICE, "UI7Check", "true", lul_device)
+		luup.attr_set("device_json", UI7_JSON_FILE, lul_device)
+		luup.reload()
+	end
 end
 
 function initstatus(lul_device)
