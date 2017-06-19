@@ -8,7 +8,8 @@ Install instructions : https://github.com/amg0/WES/blob/master/Docs/Documentatio
 NOTE for openluup users: it requires the LUA EXPAT library from  https://matthewwild.co.uk/projects/luaexpat/lom.html
 on a rapsberry PI you can install it by :  sudo apt-get install lua_expat
 
-Fonctionalites: V0.80
+Fonctionalites: V0.83
+- support for openLuup
 - les relais , les entrees digitales, les virtual switchs, les relais 1Wire: vue de l'etat dans vera et changement de l'etat par la UI de vera ou les scenes
 - les sondes de temp : vue de l'etat dans vera et utilisation possible dans les scenes comme declencheur
 - les entree analogiques,  les pinces amperimetriques, les compteurs a impulsion : vue dans VERA comme des devices de type "urn:micasaverde-com:serviceId:EnergyMetering1" avec les variables Pulse, KWH, Watts comme definis dans la spec UPNP. KWH etant la conso journaliere
