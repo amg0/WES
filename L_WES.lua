@@ -11,7 +11,7 @@ local WES_SERVICE	= "urn:upnp-org:serviceId:wes1"
 local devicetype	= "urn:schemas-upnp-org:device:wes:1"
 local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.83"
+local version		= "v0.84"
 local UI7_JSON_FILE = "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
@@ -253,6 +253,14 @@ t </Carte2>
 t </vera>]]
 }
 
+WESfixUnit = function (target_device,value)
+	local str =tostring(value)
+	if (str:sub(-2)=="m3") then
+		str = (tonumber( str:match("%S+") ) * 1000) .. " l"
+	end
+	return str
+end
+
 local xmlmap = {
   ["/data/info/firmware/text()"] =			{ variable="Firmware" , default="" },
   ["/data/variables/*"] =					{ variable="%s" , default="" },
@@ -272,10 +280,10 @@ local xmlmap = {
   ["/data/entree/vera/NOM%s/text()"] =		{ attribute="name" , child="in%s" , default="", mask=NAME_PREFIX.."%s"},
   ["/data/impulsion/PULSE%s/text()"] =		{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
   ["/data/impulsion/vera/PULSEPL%s/text()"] = { variable="PulsePerUnit" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
-  ["/data/impulsion/vera/CONSOV%s/text()"] = { variable="DayBefore,DisplayLine2" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , default=""},
-  ["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="Daily,DisplayLine1" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , default=""},
-  ["/data/impulsion/vera/CONSOM%s/text()"] = { variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
-  ["/data/impulsion/vera/CONSOA%s/text()"] = { variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" , default=""},
+  ["/data/impulsion/vera/CONSOV%s/text()"] = { variable="DayBefore,DisplayLine2" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , func="WESfixUnit", default=""},
+  ["/data/impulsion/vera/CONSOJ%s/text()"] = { variable="Daily,DisplayLine1" , service="urn:micasaverde-com:serviceId:EnergyMetering1,urn:upnp-org:serviceId:altui1", child="pls%s" , func="WESfixUnit",  default=""},
+  ["/data/impulsion/vera/CONSOM%s/text()"] = { variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" ,func="WESfixUnit", default=""},
+  ["/data/impulsion/vera/CONSOA%s/text()"] = { variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pls%s" ,func="WESfixUnit", default=""},
   ["/data/impulsion/vera/NOM%s/text()"] =	{ attribute="name" , child="pls%s" , default="", mask=NAME_PREFIX.."%s"},
   ["/data/pince/INDEX%s/text()"] =			{ variable="Pulse" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
   ["/data/pince/I%s/text()"] =				{ variable="Amps" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
@@ -285,7 +293,7 @@ local xmlmap = {
   ["/data/pince/vera/CONSOM%s/text()"] =	{ variable="Monthly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
   ["/data/pince/vera/CONSOA%s/text()"] =	{ variable="Yearly" , service="urn:micasaverde-com:serviceId:EnergyMetering1", child="pa%s" , default=""},
   ["/data/tic%s/vera/caption/text()"] =		{ attribute="name" , child="tic%s" , default="", mask=NAME_PREFIX.."%s"},
-  ["/data/relais1W/*/text()"] =				{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s", offset=100, default=""},
+  ["/data/relais1W/*/text()"] =				{ variable="Status" , service="urn:upnp-org:serviceId:SwitchPower1", child="rl1w%s", offset=100, default=""}
 }
 
 -- altid is the object ID ( like the relay ID ) on the WES server
@@ -788,6 +796,7 @@ function prepareWEScgx(lul_device)
 end
 
 local function prepareXMLmap(lul_device)
+  debug(string.format("prepareXMLmap(lul_device:%s)  xmlmap:%s",lul_device,json.encode(xmlmap)))
   local NamePrefix = getSetVariable(WES_SERVICE, "NamePrefix", lul_device, NAME_PREFIX)
   for xp,v in pairs(xmlmap) do
 	if (v.mask ~=nil) then
@@ -795,6 +804,10 @@ local function prepareXMLmap(lul_device)
 	end
   end
 
+  local v = xmlmap["/data/impulsion/vera/CONSOV%s/text()"]
+  debug(string.format("v:%s",json.encode(v)))
+  
+  
   -- init XML Map
   -- ["/data/vera/Carte1/*/text()"] = { attribute="name", child="rl1w%s", offset=100, default="", mask=NAME_PREFIX.."%s"},
   local nCartesRelais1W = getSetVariable(WES_SERVICE,"nCartesRelais1W", lul_device, 0)
@@ -877,15 +890,15 @@ function getCurrentTemperature(lul_device)
   return luup.variable_get("urn:upnp-org:serviceId:TemperatureSensor1", "CurrentTemperature", lul_device)
 end
 
-
 local function saveDeviceVariable(target_device, mask, func, variable, service, value )
   service = service or WES_SERVICE
   if (target_device ~= nil ) then
-	-- debug( string.format("service:%s variable:%s value:%s child:%s",service, variable, value, target_device) )
+	debug( string.format("service:%s variable:%s value:%s child:%s mask:%s, func:%s",service, variable, value, target_device, mask or "nil", tostring(func~=nil) ))
 	if (mask~=nil) then
-	  value = string.format(mask,value)
+		value = string.format(mask,value)
 	elseif (func~=nil) then
-	  value = (func)(target_device,value)
+		local ff = _G[func]
+		value = (ff)(target_device,value)
 	end
 
 	local var_parts = variable:split(",")
@@ -899,7 +912,6 @@ local function saveDeviceVariable(target_device, mask, func, variable, service, 
 end
 
 local function saveDeviceAttribute(target_device, mask, func, attr, value )
-
   if (target_device ~= nil ) then
 	-- debug( string.format("variable:%s value:%s child:%s", attr, value, target_device) )
 	if (mask~=nil) then
@@ -1004,19 +1016,6 @@ local function loadWesData(lul_device,xmldata)
   local lomtab = lom.parse(xmldata)
   for xp,v in pairs(xmlmap) do
 	doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
-	-- if (v.variable ~=nil ) then
-	  -- local vparts = v.variable:split(",")
-	  -- local sparts = { WES_SERVICE }
-	  -- if (v.service~=nil) then
-		-- sparts = v.service:split(",")
-	  -- end
-	  -- for k,var in pairs(vparts) do
-		-- local srv = sparts[k] or sparts[1]
-		-- doload(lul_device, lomtab, xp, v.child , srv, var, v.attribute, v.default, v.mask, v.func, v.offset or 0)
-	  -- end
-	-- else
-	  -- doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
-	-- end
   end
 
   -- load tic data
