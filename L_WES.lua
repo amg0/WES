@@ -11,7 +11,7 @@ local WES_SERVICE	= "urn:upnp-org:serviceId:wes1"
 local devicetype	= "urn:schemas-upnp-org:device:wes:1"
 local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.84"
+local version		= "v0.85"
 local UI7_JSON_FILE = "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
@@ -27,12 +27,19 @@ local ltn12 = require("ltn12")
 local lom = require("lxp.lom") -- http://matthewwild.co.uk/projects/luaexpat/lom.html
 local xpath = require("xpath")
 
+-- Warning 0.7 firmware requires
+-- c Ti1 <IHP>%09u</IHP>
+-- c Ti2 <IHC>%09u</IHC>
+-- but firmware 0.6 requires
+-- c Ti1 <IHP>%s</IHP>
+-- c Ti2 <IHC>%s</IHC>
+
 local cgx_inserts = {
   ["t </tic1>"]= [[
 t <vera>
 c e n <caption>%s</caption>
-c Ti1 <IHP>%s</IHP>
-c Ti2 <IHC>%s</IHC>
+c Ti1 <IHP>%09u</IHP>
+c Ti2 <IHC>%09u</IHC>
 c a T <KWHA>%d</KWHA>
 c j T <KWHJ>%d</KWHJ>
 c a 1 <KWHAHP>%d</KWHAHP>
@@ -63,8 +70,8 @@ t </vera>]],
   ["t </tic2>"]= [[
 t <vera>
 c e N <caption>%s</caption>
-c TI1 <IHP>%s</IHP>
-c TI2 <IHC>%s</IHC>
+c TI1 <IHP>%09u</IHP>
+c TI2 <IHC>%09u</IHC>
 c A T <KWHA>%d</KWHA>
 c J T <KWHJ>%d</KWHJ>
 c A 1 <KWHAHP>%d</KWHAHP>
@@ -753,6 +760,9 @@ end
 ------------------------------------------------
 -- STARTUP Sequence
 ------------------------------------------------
+local function firmareDependantChanges(oldfilecontent)
+	return oldfilecontent
+end
 
 function prepareWEScgx(lul_device)
   local ftp = require("socket.ftp")
@@ -774,7 +784,8 @@ function prepareWEScgx(lul_device)
   debug(string.format("FTP get	file=%s f=%s e=%s",DATACGX_FILE,json.encode(f),json.encode(e)))
   local data_cgx = table.concat(data_cgx_tbl)
 
-  local vera_cgx = data_cgx
+  local vera_cgx = firmareDependantChanges(data_cgx)
+  
   for k,v in pairs(cgx_inserts) do
 	v = v:gsub("%%","%%%%")
 	vera_cgx = vera_cgx:gsub(k,v.."\n"..k)
@@ -804,9 +815,8 @@ local function prepareXMLmap(lul_device)
 	end
   end
 
-  local v = xmlmap["/data/impulsion/vera/CONSOV%s/text()"]
-  debug(string.format("v:%s",json.encode(v)))
-  
+  -- local v = xmlmap["/data/impulsion/vera/CONSOV%s/text()"]
+  -- debug(string.format("v:%s",json.encode(v)))
   
   -- init XML Map
   -- ["/data/vera/Carte1/*/text()"] = { attribute="name", child="rl1w%s", offset=100, default="", mask=NAME_PREFIX.."%s"},
@@ -1087,9 +1097,6 @@ local function startEngine(lul_device)
   -- local xmldata = WesHttpCall(lul_device,"xml/zones/zonesDescription16IP.xml")
   if (xmldata ~= nil) then
 	local period= getSetVariable(WES_SERVICE, "RefreshPeriod", lul_device, DEFAULT_REFRESH)
-	-- local zones = xpath.selectNodes(lomtab,"//zone/text()")
-	-- debug("zones:"..json.encode(zones))
-	-- createChildren(lul_device, zones )
 	luup.call_delay("refreshEngineCB",period,tostring(lul_device))
 	return loadWesData(lul_device,xmldata)
   else
