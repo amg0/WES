@@ -27,19 +27,12 @@ local ltn12 = require("ltn12")
 local lom = require("lxp.lom") -- http://matthewwild.co.uk/projects/luaexpat/lom.html
 local xpath = require("xpath")
 
--- Warning 0.7 firmware requires
--- c Ti1 <IHP>%09u</IHP>
--- c Ti2 <IHC>%09u</IHC>
--- but firmware 0.6 requires
--- c Ti1 <IHP>%s</IHP>
--- c Ti2 <IHC>%s</IHC>
-
 local cgx_inserts = {
   ["t </tic1>"]= [[
 t <vera>
 c e n <caption>%s</caption>
-c Ti1 <IHP>%09u</IHP>
-c Ti2 <IHC>%09u</IHC>
+c Ti1 <IHP>%s</IHP>
+c Ti2 <IHC>%s</IHC>
 c a T <KWHA>%d</KWHA>
 c j T <KWHJ>%d</KWHJ>
 c a 1 <KWHAHP>%d</KWHAHP>
@@ -70,8 +63,8 @@ t </vera>]],
   ["t </tic2>"]= [[
 t <vera>
 c e N <caption>%s</caption>
-c TI1 <IHP>%09u</IHP>
-c TI2 <IHC>%09u</IHC>
+c TI1 <IHP>%s</IHP>
+c TI2 <IHC>%s</IHC>
 c A T <KWHA>%d</KWHA>
 c J T <KWHJ>%d</KWHJ>
 c A 1 <KWHAHP>%d</KWHAHP>
@@ -760,9 +753,6 @@ end
 ------------------------------------------------
 -- STARTUP Sequence
 ------------------------------------------------
-local function firmareDependantChanges(oldfilecontent)
-	return oldfilecontent
-end
 
 function prepareWEScgx(lul_device)
   local ftp = require("socket.ftp")
@@ -784,13 +774,28 @@ function prepareWEScgx(lul_device)
   debug(string.format("FTP get	file=%s f=%s e=%s",DATACGX_FILE,json.encode(f),json.encode(e)))
   local data_cgx = table.concat(data_cgx_tbl)
 
-  local vera_cgx = firmareDependantChanges(data_cgx)
-  
+  local tmp = string.match(data_cgx,"<firmware>(.+)</firmware>")
+  local firmware = string.match(tmp,"0.7")
+  local vera_cgx = data_cgx
   for k,v in pairs(cgx_inserts) do
 	v = v:gsub("%%","%%%%")
 	vera_cgx = vera_cgx:gsub(k,v.."\n"..k)
   end
-
+  
+	-- Warning 0.7 firmware requires
+	-- c Ti1 <IHP>%09u</IHP>
+	-- c Ti2 <IHC>%09u</IHC>
+	-- but firmware 0.6 requires
+	-- c Ti1 <IHP>%s</IHP>
+	-- c Ti2 <IHC>%s</IHC>
+  if (firmware=="0.7") then
+	debug( string.format("firmware==%s, changing <IHP> and <IHC> type",tmp) )
+	vera_cgx = vera_cgx:gsub("<IHP>%%s</IHP>","<IHP>%%09u</IHP>")
+	vera_cgx = vera_cgx:gsub("<IHC>%%s</IHC>","<IHC>%%09u</IHC>")
+  else
+	debug( string.format("firmware==%s",tmp) )
+  end
+  
   f,e = ftp.put( {
 	host = ip_address,
 	source = ltn12.source.string(vera_cgx),
