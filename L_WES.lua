@@ -11,7 +11,7 @@ local WES_SERVICE	= "urn:upnp-org:serviceId:wes1"
 local devicetype	= "urn:schemas-upnp-org:device:wes:1"
 local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.86"
+local version		= "v0.87"
 local UI7_JSON_FILE = "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
@@ -31,8 +31,8 @@ local cgx_inserts = {
   ["t </tic1>"]= [[
 t <vera>
 c e n <caption>%s</caption>
-c Ti1 <IHP>%s</IHP>
-c Ti2 <IHC>%s</IHC>
+c Ti1 <IHP>%d</IHP>
+c Ti2 <IHC>%d</IHC>
 c a T <KWHA>%d</KWHA>
 c j T <KWHJ>%d</KWHJ>
 c a 1 <KWHAHP>%d</KWHAHP>
@@ -63,8 +63,8 @@ t </vera>]],
   ["t </tic2>"]= [[
 t <vera>
 c e N <caption>%s</caption>
-c TI1 <IHP>%s</IHP>
-c TI2 <IHC>%s</IHC>
+c TI1 <IHP>%d</IHP>
+c TI2 <IHC>%d</IHC>
 c A T <KWHA>%d</KWHA>
 c J T <KWHJ>%d</KWHJ>
 c A 1 <KWHAHP>%d</KWHAHP>
@@ -788,13 +788,14 @@ function prepareWEScgx(lul_device)
 	-- but firmware 0.6 requires
 	-- c Ti1 <IHP>%s</IHP>
 	-- c Ti2 <IHC>%s</IHC>
-  if (firmware=="0.7") then
-	debug( string.format("firmware==%s, changing <IHP> and <IHC> type",tmp) )
-	vera_cgx = vera_cgx:gsub("<IHP>%%s</IHP>","<IHP>%%09u</IHP>")
-	vera_cgx = vera_cgx:gsub("<IHC>%%s</IHC>","<IHC>%%09u</IHC>")
-  else
-	debug( string.format("firmware==%s",tmp) )
-  end
+	
+  -- if (firmware=="0.7") then
+	-- debug( string.format("firmware==%s, changing <IHP> and <IHC> type",tmp) )
+	-- vera_cgx = vera_cgx:gsub("<IHP>%%s</IHP>","<IHP>%%09u</IHP>")
+	-- vera_cgx = vera_cgx:gsub("<IHC>%%s</IHC>","<IHC>%%09u</IHC>")
+  -- else
+	-- debug( string.format("firmware==%s",tmp) )
+  -- end
   
   f,e = ftp.put( {
 	host = ip_address,
@@ -975,11 +976,13 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 	map_iteration = child_iteration
   end
 
-  -- debug( string.format("map iteration will be:%s",json.encode(map_iteration)) )
+  debug( string.format("map iteration will be:%s , xp:%s",json.encode(map_iteration),xp) )
   local child_nth=1	  -- position in child_iteration array
   for k,idx in pairs(map_iteration) do
 	local xpath_key = string.format(xp, idx)
+	-- debug("before...")
 	local nodes = xpath.selectNodes(lomtab,xpath_key)
+	-- debug("after...")
 	debug( string.format("xpath key:%s XML node result %s",xpath_key,json.encode(nodes) ) )
 	for i,n in pairs(nodes) do
 	  -- XML child element appear as empty string, skip them as we do only key with text() or direct key with /*
