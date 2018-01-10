@@ -199,20 +199,6 @@ function goodcsv(v)
 //-------------------------------------------------------------
 // Helper functions to build URLs to call VERA code from JS
 //-------------------------------------------------------------
-function buildVeraURL( deviceID, fnToUse, varName, varValue)
-{
-	var urlHead = '' + ip_address + 'id=lu_action&serviceId=urn:micasaverde-com:serviceId:HomeAutomationGateway1&action=RunLua&Code=';
-	if (varValue != null)
-		return urlHead + fnToUse + '("' + wes_Svs + '", "' + varName + '", "' + varValue + '", ' + deviceID + ')';
-
-	return urlHead + fnToUse + '("' + wes_Svs + '", "' + varName + '", "", ' + deviceID + ')';
-}
-
-function buildVariableSetUrl( deviceID, varName, varValue)
-{
-	var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&serviceId='+wes_Svs+'&Variable='+varName+'&Value='+varValue;
-	return urlHead;
-}
 
 function buildAttributeSetUrl( deviceID, varName, varValue)
 {
