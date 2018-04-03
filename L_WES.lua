@@ -11,7 +11,7 @@ local WES_SERVICE	= "urn:upnp-org:serviceId:wes1"
 local devicetype	= "urn:schemas-upnp-org:device:wes:1"
 local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.88"
+local version		= "v0.89"
 local UI7_JSON_FILE = "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
@@ -519,14 +519,9 @@ local function Split(str, delim, maxNb)
   return result
 end
 
-function string:split(sep) -- from http://lua-users.org/wiki/SplitJoin	 : changed as consecutive delimeters was not returning empty strings
-  return Split(self, sep)
-  -- local sep, fields = sep or ":", {}
-  -- local pattern = string.format("([^%s]+)", sep)
-  -- self:gsub(pattern, function(c) fields[#fields+1] = c end)
-  -- return fields
-end
-
+-- function string:split(sep) -- from http://lua-users.org/wiki/SplitJoin	 : changed as consecutive delimeters was not returning empty strings
+  -- return Split(self, sep)
+-- end
 
 function string:template(variables)
   return (self:gsub('@(.-)@',
@@ -851,7 +846,7 @@ local function createChildren(lul_device)
 	  map = child.map
 	else
 	  local csv	 = getSetVariable(WES_SERVICE, child.map, lul_device, "")
-	  map = csv:split(",")
+	  map = Split(csv,",")
 	end
 
 	for k,v in pairs(map) do
@@ -917,8 +912,8 @@ local function saveDeviceVariable(target_device, mask, func, variable, service, 
 		value = (ff)(target_device,value)
 	end
 
-	local var_parts = variable:split(",")
-	local ser_parts = service:split(",")
+	local var_parts = Split(variable,",")
+	local ser_parts = Split(service,",")
 	for k,v in pairs(var_parts) do
 	  setVariableIfChanged( ser_parts[k] or ser_parts[1], v, value, target_device)
 	end
@@ -964,7 +959,7 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
 	child_iteration = childmap[ child_target ].map
 	if ( type(child_iteration) ~= "table") then
 	  local csv	 = getSetVariable(WES_SERVICE, child_iteration, lul_device, "")
-	  child_iteration = csv:split(",")
+	  child_iteration = Split(csv,",")
 	  if (child_iteration[1] == "" ) then -- default value of variable gives "" so it then gives at least an array of one entry with "" in it
 		child_iteration={}
 	  end
