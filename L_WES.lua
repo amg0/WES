@@ -17,6 +17,7 @@ local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
 local CGX_FILE		= "vera.cgx"	-- or data.cgx if extensions are not installed
 local NAME_PREFIX	= "WES "	-- trailing space needed
+local RAND_DELAY	= 10
 local hostname		= ""
 
 local json = require("dkjson")
@@ -1201,7 +1202,7 @@ function initstatus(lul_device)
   log("initstatus("..lul_device..") starting version: "..version)
   checkVersion(lul_device)
   hostname = getIP()
-  local delay = 1	-- delaying first refresh by x seconds
+  local delay = math.random(RAND_DELAY)	-- delaying first refresh by x seconds
   debug("initstatus("..lul_device..") startup for Root device, delay:"..delay)
   luup.call_delay("startupDeferred", delay, tostring(lul_device))
 end
