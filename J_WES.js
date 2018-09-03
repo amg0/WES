@@ -138,9 +138,9 @@ function wes_Settings(deviceID) {
 		
 		var encode = btoa( "{0}:{1}".format(usr,pwd) );
 		if (goodip(ip_address)) {
-			saveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
-			saveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
-			saveVar( deviceID,  null , "ip", ip_address, 0 )
+			kseniaSaveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
+			kseniaSaveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
+			kseniaSaveVar( deviceID,  null , "ip", ip_address, 0 )
 			jQuery.each( configs, function(idx,obj) {
 				var val = jQuery("#wes-"+obj.name).val();
 				bReload = bReload && save( deviceID,  wes_Svs, obj.name, val, jQuery.isFunction(obj.func) ? obj.func : null, 0 )
@@ -171,7 +171,7 @@ function save(deviceID, service, varName, varVal, func, reload) {
 
     if ((!func) || func(varVal)) {
         //set_device_state(deviceID,  ipx800_Svs, varName, varVal);
-		saveVar(deviceID,  service, varName, varVal, reload)
+		kseniaSaveVar(deviceID,  service, varName, varVal, reload)
         jQuery('#wes-' + varName).css('color', 'black');
 		return true;
     } else {
@@ -181,12 +181,37 @@ function save(deviceID, service, varName, varVal, func, reload) {
 	return false;
 }
 
-function saveVar(deviceID,  service, varName, varVal, reload)
+function kseniaSaveVar(deviceID,  service, varName, varVal, reload)
 {
 	if (service) {
-		set_device_state(deviceID, service, varName, varVal, 0);	// lost in case of luup restart
+		saveVar(deviceID,  service, varName, varVal)
 	} else {
 		jQuery.get( buildAttributeSetUrl( deviceID, varName, varVal) );
+	}
+}
+
+function saveVar(deviceID,  service, varName, varVal)
+{
+	if (typeof(g_ALTUI)=="undefined") {
+		//Vera
+		if (api != undefined ) {
+			api.setDeviceState(deviceID, service, varName, varVal,{dynamic:false})
+			api.setDeviceState(deviceID, service, varName, varVal,{dynamic:true})
+		}
+		else {
+			set_device_state(deviceID, service, varName, varVal, 0);
+			set_device_state(deviceID, service, varName, varVal, 1);
+		}
+		var url = buildVariableSetUrl( deviceID, service, varName, varVal)
+		jQuery.get( url )
+			.done(function(data) {
+			})
+			.fail(function() {
+				alert( "Save Variable failed" );
+			})
+	} else {
+		//Altui
+		set_device_state(deviceID, service, varName, varVal);
 	}
 }
 
@@ -199,6 +224,11 @@ function goodcsv(v)
 //-------------------------------------------------------------
 // Helper functions to build URLs to call VERA code from JS
 //-------------------------------------------------------------
+function buildVariableSetUrl( deviceID, service, varName, varValue)
+{
+	var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&serviceId='+service+'&Variable='+varName+'&Value='+varValue;
+	return urlHead;
+}
 
 function buildAttributeSetUrl( deviceID, varName, varValue)
 {
