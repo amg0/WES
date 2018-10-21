@@ -14,39 +14,125 @@
 var wes_Svs = 'urn:upnp-org:serviceId:wes1';
 var ip_address = data_request_url;
 
-function goodip(ip)
-{
-	// @duiffie contribution
-	var reg = new RegExp('^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\\d{1,5})?$', 'i');
-	return(reg.test(ip));
-}
-
-if (typeof String.prototype.format == 'undefined') {
-	String.prototype.format = function()
+var WES_Utils = (function() {
+	function goodip(ip)
 	{
-		var args = new Array(arguments.length);
+		// @duiffie contribution
+		var reg = new RegExp('^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(:\\d{1,5})?$', 'i');
+		return(reg.test(ip));
+	};
 
-		for (var i = 0; i < args.length; ++i) {
-			// `i` is always valid index in the arguments object
-			// so we merely retrieve the value
-			args[i] = arguments[i];
+	function goodcsv(v)
+	{
+		var reg = new RegExp('^[0-9]*(,[0-9]+)*$', 'i');
+		return(reg.test(v));
+	};
+	
+	function wes_format(str)
+	{
+	   var content = str;
+	   for (var i=1; i < arguments.length; i++)
+	   {
+			var replacement = new RegExp('\\{' + (i-1) + '\\}', 'g');	// regex requires \ and assignment into string requires \\,
+			// if ($.type(arguments[i]) === "string")
+				// arguments[i] = arguments[i].replace(/\$/g,'$');
+			content = content.replace(replacement, arguments[i]);  
+	   }
+	   return content;
+	};
+	
+	function findDeviceIdx(deviceID) 
+	{
+		//jsonp.ud.devices
+		for(var i=0; i<jsonp.ud.devices.length; i++) {
+			if (jsonp.ud.devices[i].id == deviceID) 
+				return i;
+		}
+		return null;
+	};
+
+	function buildVariableSetUrl( deviceID, service, varName, varValue)
+	{
+		var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&serviceId='+service+'&Variable='+varName+'&Value='+varValue;
+		return urlHead;
+	};
+
+	function buildAttributeSetUrl( deviceID, varName, varValue)
+	{
+		var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&Variable='+varName+'&Value='+varValue;
+		return urlHead;
+	};
+	
+	function saveVar(deviceID,  service, varName, varVal)
+	{
+		if (typeof(g_ALTUI)=="undefined") {
+			//Vera
+			if (api != undefined ) {
+				api.setDeviceState(deviceID, service, varName, varVal,{dynamic:false})
+				api.setDeviceState(deviceID, service, varName, varVal,{dynamic:true})
+			}
+			else {
+				set_device_state(deviceID, service, varName, varVal, 0);
+				set_device_state(deviceID, service, varName, varVal, 1);
+			}
+			var url = WES_Utils.buildVariableSetUrl( deviceID, service, varName, varVal)
+			jQuery.get( url )
+				.done(function(data) {
+				})
+				.fail(function() {
+					alert( "Save Variable failed" );
+				})
+		} else {
+			//Altui
+			set_device_state(deviceID, service, varName, varVal);
+		}
+	};
+	
+	function SaveVarOrAttr(deviceID,  service, varName, varVal, reload)
+	{
+		if (service) {
+			WES_Utils.saveVar(deviceID,  service, varName, varVal)
+		} else {
+			jQuery.get( WES_Utils.buildAttributeSetUrl( deviceID, varName, varVal) );
+		}
+	};
+
+
+	//-------------------------------------------------------------
+	// Variable saving ( log , then full save )
+	//-------------------------------------------------------------
+	function validateAndSave(deviceID, service, varName, varVal, func, reload) {
+		// reload is optional parameter and defaulted to false
+		if (typeof reload === "undefined" || reload === null) { 
+			reload = false; 
 		}
 
-		return this.replace(/{(\d+)}/g, function(match, number) { 
-			return typeof args[number] != 'undefined' ? args[number] : match;
-		});
-	};
-};
+		if ((!func) || func(varVal)) {
+			//set_device_state(deviceID,  ipx800_Svs, varName, varVal);
+			WES_Utils.SaveVarOrAttr(deviceID,  service, varName, varVal, reload)
+			jQuery('#wes-' + varName).css('color', 'black');
+			return true;
+		} else {
+			jQuery('#wes-' + varName).css('color', 'red');
+			alert(varName+':'+varVal+' is not correct');
+		}
+		return false;
+	}
+	
+	return {
+		goodip:goodip,
+		goodcsv:goodcsv,
+		format:wes_format,
+		findDeviceIdx:findDeviceIdx,
+		buildVariableSetUrl:buildVariableSetUrl,
+		buildAttributeSetUrl:buildAttributeSetUrl,
+		saveVar:saveVar,
+		SaveVarOrAttr:SaveVarOrAttr,
+		validateAndSave:validateAndSave
+	}
+})();
 
-function findDeviceIdx(deviceID) 
-{
-	//jsonp.ud.devices
-    for(var i=0; i<jsonp.ud.devices.length; i++) {
-        if (jsonp.ud.devices[i].id == deviceID) 
-			return i;
-    }
-	return null;
-}
+
 
 //-------------------------------------------------------------
 // Device TAB : Donate
@@ -66,33 +152,33 @@ function wes_Settings(deviceID) {
 	var debug  = get_device_state(deviceID,  wes_Svs, 'Debug',1);
 	var credentials = get_device_state(deviceID,  wes_Svs, 'Credentials',1);
 	var poll = get_device_state(deviceID,  wes_Svs, 'RefreshPeriod',1);
-	var ip_address = jsonp.ud.devices[findDeviceIdx(deviceID)].ip;
+	var ip_address = jsonp.ud.devices[ WES_Utils.findDeviceIdx(deviceID) ].ip;
 	var configs = [
 		{ name: "UserFTP", label: "User pour FTP" , placeholder: "doit etre configure sur le WES, par default adminftp"},
 		{ name: "PasswordFTP", type:"password", label: "Password pour FTP" , placeholder: "doit etre configure sur le WES, par default wesftp"},
 		{ name: "NamePrefix", label: "Prefix pour les noms" , placeholder: "Prefix ou vide"},
-		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes" , func: goodcsv},
-		{ name: "AnalogInputs", label: "Inputs Analogiques" , placeholder: "comma separated list of indexes", func: goodcsv},
-		{ name: "Relais1W", label: "Relais 1Wire" , placeholder: "comma separated list of relais number", func: goodcsv},
-		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes", func: goodcsv},
-		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes", func: goodcsv},
-		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes", func: goodcsv}
+		{ name: "AnalogClamps", label: "Pinces Analogiques" , placeholder: "comma separated list of indexes" , func: WES_Utils.goodcsv},
+		{ name: "AnalogInputs", label: "Inputs Analogiques" , placeholder: "comma separated list of indexes", func: WES_Utils.goodcsv},
+		{ name: "Relais1W", label: "Relais 1Wire" , placeholder: "comma separated list of relais number", func: WES_Utils.goodcsv},
+		{ name: "PulseCounters", label: "Compteurs Impulsion" , placeholder: "comma separated list of indexes", func: WES_Utils.goodcsv},
+		{ name: "TempSensors", label: "Senseurs de Température" , placeholder: "comma separated list of indexes", func: WES_Utils.goodcsv},
+		{ name: "VirtualSwitches", label: "Switch Virtuels" , placeholder: "comma separated list of indexes", func: WES_Utils.goodcsv}
 	];
 
 	var htmlConfigs = "";
 	jQuery.each( configs, function(idx,obj) {
 		var value = get_device_state(deviceID,  wes_Svs, obj.name,1);
-		htmlConfigs += '	\
+		htmlConfigs += WES_Utils.format('	\
 					<div class="form-group col-xs-6 col-6">																	\
 						<label for="wes-{0}">{1}</label>		\
 						<input type="{3}" class="form-control" id="wes-{0}" placeholder="{2}" value="{4}">	\
 					</div>																										\
-		'.format(
-			obj.name,
-			obj.label,
-			obj.placeholder,
-			obj.type || "text",
-			value
+		',
+		obj.name,
+		obj.label,
+		obj.placeholder,
+		obj.type || "text",
+		value
 		);
 	});
 	var html =
@@ -136,14 +222,14 @@ function wes_Settings(deviceID) {
 		var pwd = jQuery( "#wes-pwd" ).val();
 		var poll = jQuery( "#wes-RefreshPeriod" ).val();
 		
-		var encode = btoa( "{0}:{1}".format(usr,pwd) );
-		if (goodip(ip_address)) {
-			kseniaSaveVar( deviceID,  wes_Svs, "Credentials", encode, 0 )
-			kseniaSaveVar( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
-			kseniaSaveVar( deviceID,  null , "ip", ip_address, 0 )
+		var encode = btoa( usr+":"+pwd );
+		if (WES_Utils.goodip(ip_address)) {
+			WES_Utils.SaveVarOrAttr( deviceID,  wes_Svs, "Credentials", encode, 0 )
+			WES_Utils.SaveVarOrAttr( deviceID,  wes_Svs, "RefreshPeriod", poll, 0 )
+			WES_Utils.SaveVarOrAttr( deviceID,  null , "ip", ip_address, 0 )
 			jQuery.each( configs, function(idx,obj) {
 				var val = jQuery("#wes-"+obj.name).val();
-				bReload = bReload && save( deviceID,  wes_Svs, obj.name, val, jQuery.isFunction(obj.func) ? obj.func : null, 0 )
+				bReload = bReload && WES_Utils.validateAndSave( deviceID,  wes_Svs, obj.name, val, jQuery.isFunction(obj.func) ? obj.func : null, 0 )
 			});
 		} else {
 			alert("Invalid IP address")
@@ -160,100 +246,8 @@ function wes_Settings(deviceID) {
 }
 
 
-//-------------------------------------------------------------
-// Variable saving ( log , then full save )
-//-------------------------------------------------------------
-function save(deviceID, service, varName, varVal, func, reload) {
-	// reload is optional parameter and defaulted to false
-	if (typeof reload === "undefined" || reload === null) { 
-		reload = false; 
-	}
 
-    if ((!func) || func(varVal)) {
-        //set_device_state(deviceID,  ipx800_Svs, varName, varVal);
-		kseniaSaveVar(deviceID,  service, varName, varVal, reload)
-        jQuery('#wes-' + varName).css('color', 'black');
-		return true;
-    } else {
-        jQuery('#wes-' + varName).css('color', 'red');
-		alert(varName+':'+varVal+' is not correct');
-    }
-	return false;
-}
 
-function kseniaSaveVar(deviceID,  service, varName, varVal, reload)
-{
-	if (service) {
-		saveVar(deviceID,  service, varName, varVal)
-	} else {
-		jQuery.get( buildAttributeSetUrl( deviceID, varName, varVal) );
-	}
-}
 
-function saveVar(deviceID,  service, varName, varVal)
-{
-	if (typeof(g_ALTUI)=="undefined") {
-		//Vera
-		if (api != undefined ) {
-			api.setDeviceState(deviceID, service, varName, varVal,{dynamic:false})
-			api.setDeviceState(deviceID, service, varName, varVal,{dynamic:true})
-		}
-		else {
-			set_device_state(deviceID, service, varName, varVal, 0);
-			set_device_state(deviceID, service, varName, varVal, 1);
-		}
-		var url = buildVariableSetUrl( deviceID, service, varName, varVal)
-		jQuery.get( url )
-			.done(function(data) {
-			})
-			.fail(function() {
-				alert( "Save Variable failed" );
-			})
-	} else {
-		//Altui
-		set_device_state(deviceID, service, varName, varVal);
-	}
-}
 
-function goodcsv(v)
-{
-	var reg = new RegExp('^[0-9]*(,[0-9]+)*$', 'i');
-	return(reg.test(v));
-}
-
-//-------------------------------------------------------------
-// Helper functions to build URLs to call VERA code from JS
-//-------------------------------------------------------------
-function buildVariableSetUrl( deviceID, service, varName, varValue)
-{
-	var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&serviceId='+service+'&Variable='+varName+'&Value='+varValue;
-	return urlHead;
-}
-
-function buildAttributeSetUrl( deviceID, varName, varValue)
-{
-	var urlHead = '' + ip_address + 'id=variableset&DeviceNum='+deviceID+'&Variable='+varName+'&Value='+varValue;
-	return urlHead;
-}
-
-function buildUPnPActionUrl(deviceID,service,action,params)
-{
-	var urlHead = ip_address +'id=action&output_format=json&DeviceNum='+deviceID+'&serviceId='+service+'&action='+action;//'&newTargetValue=1';
-	if (params != undefined) {
-		jQuery.each(params, function(index,value) {
-			urlHead = urlHead+"&"+index+"="+value;
-		});
-	}
-	return urlHead;
-}
-
-function buildHandlerUrl(deviceID,command,params)
-{
-	//http://192.168.1.5:3480/data_request?id=lr_IPhone_Handler
-	var urlHead = ip_address +'id=lr_WES_Handler&command='+command+'&DeviceNum='+deviceID;
-	jQuery.each(params, function(index,value) {
-		urlHead = urlHead+"&"+index+"="+encodeURIComponent(value);
-	});
-	return encodeURI(urlHead);
-}
 
