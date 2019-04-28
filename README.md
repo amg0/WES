@@ -3,12 +3,15 @@ VERA driver for Wes v2 serveur from cartelectronic.fr
 https://www.cartelectronic.fr/index.php?id_cms=8&controller=cms
 plugin sur le MCV store : http://apps.mios.com/plugin.php?id=8906
 
-Install instructions : https://github.com/amg0/WES/blob/master/Docs/Documentation%20Installation%20WES.pdf
+#Install instructions
+
+https://github.com/amg0/WES/blob/master/Docs/Documentation%20Installation%20WES.pdf
 
 NOTE for openluup users: it requires the LUA EXPAT library from  https://matthewwild.co.uk/projects/luaexpat/lom.html
 on a rapsberry PI you can install it by :  sudo apt-get install lua_expat
 
-Fonctionalites: V0.83
+#Fonctionalites: V0.90
+
 - support for openLuup
 - les relais , les entrees digitales, les virtual switchs, les relais 1Wire: vue de l'etat dans vera et changement de l'etat par la UI de vera ou les scenes
 - les sondes de temp : vue de l'etat dans vera et utilisation possible dans les scenes comme declencheur
@@ -20,9 +23,11 @@ Fonctionalites: V0.83
 - possibilite de choisir un prefix ( ou nom ) pour les peripheriques "enfants" du WES ( variable NamePrefix)
 - UPNP Actions: forcer un refresh,  uploader le fichier .cgx par ftp
 
-Necessite:
+##Necessite:
+
 - le fichier vera.cgx dans le site web du Wes
 - l'installation de ce fichier au sein du serveur WES est automatique par le plugin VERA  (FTP)
+- Firmware version of the WES server must be >= V 0.83
 
 
 Le mapping entre le vera.cgx et les types/variables devices est definie par un tableau base sur des XPATHS donc facilement modifiable/extensible
