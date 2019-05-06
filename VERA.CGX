@@ -6,123 +6,115 @@ c h h <time>%02d:%02d</time>
 c v v <firmware>%s</firmware>
 t </info>
 t <tic1>
-c e a <ADCO>%s</ADCO>
+c es1 <ADCO>%s</ADCO>
 c eo1 <OPTARIF>%s.</OPTARIF>
-c e c <ISOUSC>%d</ISOUSC>
-c T p <PTEC>%s</PTEC>
-c i p <PAP>%d</PAP>
-c ii0 <IINST>%d</IINST>
-c ii1 <IINST1>%d</IINST1>
-c ii2 <IINST2>%d</IINST2>
-c ii3 <IINST3>%d</IINST3>
-c im0 <IMAX>%d</IMAX>
-c im1 <IMAX1>%d</IMAX1>
-c im2 <IMAX2>%d</IMAX2>
-c im3 <IMAX3>%d</IMAX3>
+c eS1 <ISOUSC>%d</ISOUSC>
+c Tn1 <PTEC>%s</PTEC>
+c ip1 <PAP>%d</PAP>
+c ii10<IINST>%d</IINST>
+c ii11<IINST1>%d</IINST1>
+c ii12<IINST2>%d</IINST2>
+c ii13<IINST3>%d</IINST3>
+c iu11<TENSION1>%lu</TENSION1>
+c iu12<TENSION2>%lu</TENSION2>
+c iu13<TENSION3>%lu</TENSION3>
+c iM10<IMAX>%d</IMAX>
+c iM11<IMAX1>%d</IMAX1>
+c iM12<IMAX2>%d</IMAX2>
+c iM13<IMAX3>%d</IMAX3>
 c Te1 <PEJP>%d</PEJP>
 c Td1 <DEMAIN>%s</DEMAIN>
-c Tb1 <BASE>%s</BASE>
-c Tc2 <HCHC>%s</HCHC>
-c Tc1 <HCHP>%s</HCHP>
-c Tj1 <EJPHN>%s</EJPHN>
-c Tj2 <EJPHPM>%s</EJPHPM>
-c Tr1 <BBRHCJB>%s</BBRHCJB>
-c Tr2 <BBRHPJB>%s</BBRHPJB>
-c Tr3 <BBRHCJW>%s</BBRHCJW>
-c Tr4 <BBRHPJW>%s</BBRHPJW>
-c Tr5 <BBRHCJR>%s</BBRHCJR>
-c Tr6 <BBRHPJR>%s</BBRHPJR>
+c Tb11<BASE>%09u</BASE>
+c Tc12<HCHC>%09u</HCHC>
+c Tc11<HCHP>%09u</HCHP>
+c Tj11<EJPHN>%09u</EJPHN>
+c Tj12<EJPHPM>%09u</EJPHPM>
+c Tr11<BBRHCJB>%09u</BBRHCJB>
+c Tr12<BBRHPJB>%09u</BBRHPJB>
+c Tr13<BBRHCJW>%09u</BBRHCJW>
+c Tr14<BBRHPJW>%09u</BBRHPJW>
+c Tr15<BBRHCJR>%09u</BBRHCJR>
+c Tr16<BBRHPJR>%09u</BBRHPJR>
+c Ta1 <INJECTION>%09u</INJECTION>
 t <vera>
-c e n <caption>%s</caption>
-c Ti1 <IHP>%s</IHP>
-c Ti2 <IHC>%s</IHC>
+c en1 <caption>%s</caption>
 c a T <KWHA>%d</KWHA>
-c j T <KWHJ>%d</KWHJ>
-c a 1 <KWHAHP>%d</KWHAHP>
-c a 2 <KWHAHC>%d</KWHAHC>
-c a 3 <KWHABHP>%d</KWHABHP>
-c a 4 <KWHABHC>%d</KWHABHC>
-c a 5 <KWHARHP>%d</KWHARHP>
-c a 6 <KWHARHC>%d</KWHARHC>
-c m 1 <KWHMHP>%d</KWHMHP>
-c m 2 <KWHMHC>%d</KWHMHC>
-c m 3 <KWHMBHP>%d</KWHMBHP>
-c m 4 <KWHMBHC>%d</KWHMBHC>
-c m 5 <KWHMRHP>%d</KWHMRHP>
-c m 6 <KWHMRHC>%d</KWHMRHC>
-c s 1 <KWHSHP>%d</KWHSHP>
-c s 2 <KWHSHC>%d</KWHSHC>
-c s 3 <KWHSBHP>%d</KWHSBHP>
-c s 4 <KWHSBHC>%d</KWHSBHC>
-c s 5 <KWHSRHP>%d</KWHSRHP>
-c s 6 <KWHSRHC>%d</KWHSRHC>
-c j 1 <KWHJHP>%d</KWHJHP>
-c j 2 <KWHJHC>%d</KWHJHC>
-c j 3 <KWHJBHP>%d</KWHJBHP>
-c j 4 <KWHJBHC>%d</KWHJBHC>
-c j 5 <KWHJRHP>%d</KWHJRHP>
-c j 6 <KWHJRHC>%d</KWHJRHC>
+c jT1 <KWHJ>%d</KWHJ>
+c Ti11 <IHP>%s</IHP>
+c Ti12 <IHC>%s</IHC>
 t </vera>
 t </tic1>
 t <tic2>
-c e A <ADCO>%s</ADCO>
+c es2 <ADCO>%s</ADCO>
 c eo2 <OPTARIF>%s.</OPTARIF>
-c e C <ISOUSC>%d</ISOUSC>
-c T P <PTEC>%s</PTEC>
-c I p <PAP>%d</PAP>
-c Ii0 <IINST>%d</IINST>
-c Ii1 <IINST1>%d</IINST1>
-c Ii2 <IINST2>%d</IINST2>
-c Ii3 <IINST3>%d</IINST3>
-c Im0 <IMAX>%d</IMAX>
-c Im1 <IMAX1>%d</IMAX1>
-c Im2 <IMAX2>%d</IMAX2>
-c Im3 <IMAX3>%d</IMAX3>
+c eS2 <ISOUSC>%d</ISOUSC>
+c Tn2 <PTEC>%s</PTEC>
+c ip2 <PAP>%d</PAP>
+c ii20<IINST>%d</IINST>
+c ii21<IINST1>%d</IINST1>
+c ii22<IINST2>%d</IINST2>
+c ii23<IINST3>%d</IINST3>
+c iu21<TENSION1>%lu</TENSION1>
+c iu22<TENSION2>%lu</TENSION2>
+c iu23<TENSION3>%lu</TENSION3>
+c iM20 <IMAX>%d</IMAX>
+c iM21 <IMAX1>%d</IMAX1>
+c iM22 <IMAX2>%d</IMAX2>
+c iM23 <IMAX3>%d</IMAX3>
 c Te2 <PEJP>%d</PEJP>
 c Td2 <DEMAIN>%s</DEMAIN>
-c TB1 <BASE>%s</BASE>
-c TC2 <HCHC>%s</HCHC>
-c TC1 <HCHP>%s</HCHP>
-c TJ1 <EJPHN>%s</EJPHN>
-c TJ2 <EJPHPM>%s</EJPHPM>
-c TR1 <BBRHCJB>%s</BBRHCJB>
-c TR2 <BBRHPJB>%s</BBRHPJB>
-c TR3 <BBRHCJW>%s</BBRHCJW>
-c TR4 <BBRHPJW>%s</BBRHPJW>
-c TR5 <BBRHCJR>%s</BBRHCJR>
-c TR6 <BBRHPJR>%s</BBRHPJR>
+c Tb21 <BASE>%09u</BASE>
+c Tc22 <HCHC>%09u</HCHC>
+c Tc21 <HCHP>%09u</HCHP>
+c Tj21 <EJPHN>%09u</EJPHN>
+c Tj22 <EJPHPM>%09u</EJPHPM>
+c Tr21 <BBRHCJB>%09u</BBRHCJB>
+c Tr22 <BBRHPJB>%09u</BBRHPJB>
+c Tr23 <BBRHCJW>%09u</BBRHCJW>
+c Tr24 <BBRHPJW>%09u</BBRHPJW>
+c Tr25 <BBRHCJR>%09u</BBRHCJR>
+c Tr26 <BBRHPJR>%09u</BBRHPJR>
+c Ta2 <INJECTION>%09u</INJECTION>
 t <vera>
-c e N <caption>%s</caption>
-c TI1 <IHP>%s</IHP>
-c TI2 <IHC>%s</IHC>
+c en2 <caption>%s</caption>
 c A T <KWHA>%d</KWHA>
-c J T <KWHJ>%d</KWHJ>
-c A 1 <KWHAHP>%d</KWHAHP>
-c A 2 <KWHAHC>%d</KWHAHC>
-c A 3 <KWHABHP>%d</KWHABHP>
-c A 4 <KWHABHC>%d</KWHABHC>
-c A 5 <KWHARHP>%d</KWHARHP>
-c A 6 <KWHARHC>%d</KWHARHC>
-c m21 <KWHMHP>%d</KWHMHP>
-c m22 <KWHMHC>%d</KWHMHC>
-c m23 <KWHMBHP>%d</KWHMBHP>
-c m24 <KWHMBHC>%d</KWHMBHC>
-c m25 <KWHMRHP>%d</KWHMRHP>
-c m26 <KWHMRHC>%d</KWHMRHC>
-c S 1 <KWHSHP>%d</KWHSHP>
-c S 2 <KWHSHC>%d</KWHSHC>
-c S 3 <KWHSBHP>%d</KWHSBHP>
-c S 4 <KWHSBHC>%d</KWHSBHC>
-c S 5 <KWHSRHP>%d</KWHSRHP>
-c S 6 <KWHSRHC>%d</KWHSRHC>
-c J 1 <KWHJHP>%d</KWHJHP>
-c J 2 <KWHJHC>%d</KWHJHC>
-c J 3 <KWHJBHP>%d</KWHJBHP>
-c J 4 <KWHJBHC>%d</KWHJBHC>
-c J 5 <KWHJRHP>%d</KWHJRHP>
-c J 6 <KWHJRHC>%d</KWHJRHC>
+c jT2 <KWHJ>%d</KWHJ>
+c Ti21 <IHP>%s</IHP>
+c Ti22 <IHC>%s</IHC>
 t </vera>
 t </tic2>
+t <tic3>
+c es3 <ADCO>%s</ADCO>
+c eo3 <OPTARIF>%s.</OPTARIF>
+c eS3 <ISOUSC>%d</ISOUSC>
+c Tn3 <PTEC>%s</PTEC>
+c ip3 <PAP>%d</PAP>
+c ii30<IINST>%d</IINST>
+c ii31<IINST1>%d</IINST1>
+c ii32<IINST2>%d</IINST2>
+c ii33<IINST3>%d</IINST3>
+c iu31<TENSION1>%lu</TENSION1>
+c iu32<TENSION2>%lu</TENSION2>
+c iu33<TENSION3>%lu</TENSION3>
+c iM30 <IMAX>%d</IMAX>
+c iM31 <IMAX1>%d</IMAX1>
+c iM32 <IMAX2>%d</IMAX2>
+c iM33 <IMAX3>%d</IMAX3>
+c Te3 <PEJP>%d</PEJP>
+c Td3 <DEMAIN>%s</DEMAIN>
+c Tb31 <BASE>%09u</BASE>
+c Tc32 <HCHC>%09u</HCHC>
+c Tc31 <HCHP>%09u</HCHP>
+c Tj31 <EJPHN>%09u</EJPHN>
+c Tj32 <EJPHPM>%09u</EJPHPM>
+c Tr31 <BBRHCJB>%09u</BBRHCJB>
+c Tr32 <BBRHPJB>%09u</BBRHPJB>
+c Tr33 <BBRHCJW>%09u</BBRHCJW>
+c Tr34 <BBRHPJW>%09u</BBRHPJW>
+c Tr35 <BBRHCJR>%09u</BBRHCJR>
+c Tr36 <BBRHPJR>%09u</BBRHPJR>
+c Ta3 <INJECTION>%09u</INJECTION>
+t </tic3>
 t <impulsion>
 c pp1 <PULSE1>%d</PULSE1>
 c pIU1<INDEX1>%.0f</INDEX1>
@@ -186,12 +178,17 @@ t </impulsion>
 t <pince>
 c P A1 <I1>%.02f</I1>
 c P W1 <INDEX1>%d</INDEX1>
+c PPi1 <INJECT1>%d</INJECT1>
 c P A2 <I2>%.02f</I2>
 c P W2 <INDEX2>%d</INDEX2>
+c PPi2 <INJECT2>%d</INJECT2>
 c P A3 <I3>%.02f</I3>
 c P W3 <INDEX3>%d</INDEX3>
+c PPi3 <INJECT3>%d</INJECT3>
 c P A4 <I4>%.02f</I4>
 c P W4 <INDEX4>%d</INDEX4>
+c PPi4 <INJECT4>%d</INJECT4>
+c PVV  <V>%d</V>
 t <vera>
 c Pn1 <NOM1>%s</NOM1>
 c P P1 <VA1>%d</VA1>
@@ -296,10 +293,7 @@ c l n2 <NOM2>%s</NOM2>
 t </vera>
 t </entree>
 t <analogique>
-c l A1 <AD1>%d</AD1>
-c l A2 <AD2>%d</AD2>
-c l A3 <AD3>%d</AD3>
-c l A4 <AD4>%d</AD4>
+c la <AD1>%.02f</AD1><AD2>%.02f</AD2><AD3>%.02f</AD3><AD4>%.02f</AD4>
 t <vera>
 c l a1 <NOM1>%s</NOM1>
 c l a2 <NOM2>%s</NOM2>

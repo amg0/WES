@@ -11,7 +11,7 @@ local WES_SERVICE	= "urn:upnp-org:serviceId:wes1"
 local devicetype	= "urn:schemas-upnp-org:device:wes:1"
 local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.90"
+local version		= "v0.91"
 local UI7_JSON_FILE = "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
@@ -258,66 +258,18 @@ local cgx_inserts_new = {
   ["t </tic1>"]= [[
 t <vera>
 c en1 <caption>%s</caption>
+c a T <KWHA>%d</KWHA>
+c jT1 <KWHJ>%d</KWHJ>
 c Ti11 <IHP>%s</IHP>
 c Ti12 <IHC>%s</IHC>
-c en1 <KWHA>0</KWHA>
-c en1 <KWHJ>0</KWHJ>
-c en1 <KWHAHP>0</KWHAHP>
-c en1 <KWHAHC>0</KWHAHC>
-c en1 <KWHABHP>0</KWHABHP>
-c en1 <KWHABHC>0</KWHABHC>
-c en1 <KWHARHP>0</KWHARHP>
-c en1 <KWHARHC>0</KWHARHC>
-c en1 <KWHMHP>0</KWHMHP>
-c en1 <KWHMHC>0</KWHMHC>
-c en1 <KWHMBHP>0</KWHMBHP>
-c en1 <KWHMBHC>0</KWHMBHC>
-c en1 <KWHMRHP>0</KWHMRHP>
-c en1 <KWHMRHC>0</KWHMRHC>
-c en1 <KWHSHP>0</KWHSHP>
-c en1 <KWHSHC>0</KWHSHC>
-c en1 <KWHSBHP>0</KWHSBHP>
-c en1 <KWHSBHC>0</KWHSBHC>
-c en1 <KWHSRHP>0</KWHSRHP>
-c en1 <KWHSRHC>0</KWHSRHC>
-c en1 <KWHJHP>0</KWHJHP>
-c en1 <KWHJHC>0</KWHJHC>
-c en1 <KWHJBHP>0</KWHJBHP>
-c en1 <KWHJBHC>0</KWHJBHC>
-c en1 <KWHJRHP>0</KWHJRHP>
-c en1 <KWHJRHC>0</KWHJRHC>
 t </vera>]],
   ["t </tic2>"]= [[
 t <vera>
 c en2 <caption>%s</caption>
+c A T <KWHA>%d</KWHA>
+c jT2 <KWHJ>%d</KWHJ>
 c Ti21 <IHP>%s</IHP>
 c Ti22 <IHC>%s</IHC>
-c en2 <KWHA>0</KWHA>
-c en2 <KWHJ>0</KWHJ>
-c en2 <KWHAHP>0</KWHAHP>
-c en2 <KWHAHC>0</KWHAHC>
-c en2 <KWHABHP>0</KWHABHP>
-c en2 <KWHABHC>0</KWHABHC>
-c en2 <KWHARHP>0</KWHARHP>
-c en2 <KWHARHC>0</KWHARHC>
-c en2 <KWHMHP>0</KWHMHP>
-c en2 <KWHMHC>0</KWHMHC>
-c en2 <KWHMBHP>0</KWHMBHP>
-c en2 <KWHMBHC>0</KWHMBHC>
-c en2 <KWHMRHP>0</KWHMRHP>
-c en2 <KWHMRHC>0</KWHMRHC>
-c en2 <KWHSHP>0</KWHSHP>
-c en2 <KWHSHC>0</KWHSHC>
-c en2 <KWHSBHP>0</KWHSBHP>
-c en2 <KWHSBHC>0</KWHSBHC>
-c en2 <KWHSRHP>0</KWHSRHP>
-c en2 <KWHSRHC>0</KWHSRHC>
-c en2 <KWHJHP>0</KWHJHP>
-c en2 <KWHJHC>0</KWHJHC>
-c en2 <KWHJBHP>0</KWHJBHP>
-c en2 <KWHJBHC>0</KWHJBHC>
-c en2 <KWHJRHP>0</KWHJRHP>
-c en2 <KWHJRHC>0</KWHJRHC>
 t </vera>]],
   ["t </impulsion>"]= [[
 t <vera>
@@ -996,11 +948,13 @@ function prepareWEScgx(lul_device)
   })
   debug(string.format("FTP get	file=%s f=%s e=%s",DATACGX_FILE,json.encode(f),json.encode(e)))
   local data_cgx = table.concat(data_cgx_tbl)
-
+  if(data_cgx ==nil) then
+	luup.device_message(lul_device,2,"could not ftp data.cgx file. Reset WES!",0,"@amg0")
+	return nil
+  end
   local tmp = string.match(data_cgx,"<firmware>(.+)</firmware>")
   local firmware = string.match(tmp,"0.7")
-  -- local inserts_to_use = (firmware=="0.8") and cgx_inserts_new or cgx_inserts
-  local inserts_to_use = cgx_inserts_new
+  local inserts_to_use = (firmware==nil) and cgx_inserts_new or cgx_inserts
   local vera_cgx = data_cgx
   for k,v in pairs(inserts_to_use) do
 	v = v:gsub("%%","%%%%")
@@ -1035,6 +989,7 @@ function prepareWEScgx(lul_device)
   if (f==nil) then
 	error(string.format("Failed to upload %s file, error = %s",CGX_FILE,e))
   end
+  return 1
 end
 
 local function prepareXMLmap(lul_device)
