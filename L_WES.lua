@@ -11,7 +11,7 @@ local WES_SERVICE	= "urn:upnp-org:serviceId:wes1"
 local devicetype	= "urn:schemas-upnp-org:device:wes:1"
 local this_device	= nil
 local DEBUG_MODE	= false -- controlled by UPNP action
-local version		= "v0.91"
+local version		= "v0.92"
 local UI7_JSON_FILE = "D_WES_UI7.json"
 local DEFAULT_REFRESH = 30
 local DATACGX_FILE	= "DATA.CGX"
@@ -1160,9 +1160,10 @@ local function doload(lul_device, lomtab, xp, child_target, service,  variable, 
   local child_nth=1	  -- position in child_iteration array
   for k,idx in pairs(map_iteration) do
 	local xpath_key = string.format(xp, idx)
-	-- debug("before...")
-	local nodes = xpath.selectNodes(lomtab,xpath_key)
-	-- debug("after...")
+	debug("before... xpath_key:"..xpath_key)
+  debug("before... lomtab:"..json.encode(lomtab))
+  local nodes = xpath.selectNodes(lomtab,xpath_key)
+	debug("after...")
 	debug( string.format("xpath key:%s XML node result %s",xpath_key,json.encode(nodes) ) )
 	for i,n in pairs(nodes) do
 	  -- XML child element appear as empty string, skip them as we do only key with text() or direct key with /*
@@ -1212,28 +1213,32 @@ end
 local function loadWesData(lul_device,xmldata)
   debug(string.format("loadWesData(%s) xml=%s",lul_device,xmldata))
   local lomtab = lom.parse(xmldata)
-  for xp,v in pairs(xmlmap) do
-	doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
-  end
+  if (lomtab~=nil) then
+    -- debug(string.format("loadWesData(%s) returns lomtab:%s",lul_device,json.encode(lomtab)))
+    for xp,v in pairs(xmlmap) do
+      doload(lul_device, lomtab, xp, v.child , v.service, v.variable, v.attribute, v.default, v.mask, v.func, v.offset or 0)
+    end
 
-  -- load tic data
-  for i,child_name in pairs( {"tic1","tic2"} ) do
-	local child_device = findChild( lul_device, child_name )
-	if (child_device~=nil) then
-	  -- iterate xml
-	  local xpath_tmpl = "/data/".. child_name .. "/*"
-	  debug(string.format("xpath=%s",xpath_tmpl))
-	  local nodes = xpath.selectNodes(lomtab,xpath_tmpl)
-	  for idx,xml in pairs(nodes) do
-		-- debug(string.format("idx:%s xml:%s",idx,json.encode(xml)))
-		-- if it is a simple string
-		if (type(xml[1]) == "string") then
-		  setVariableIfChanged(WES_SERVICE, xml.tag, xml[1], child_device)
-		end
-	  end
-	end
+    -- load tic data
+    for i,child_name in pairs( {"tic1","tic2"} ) do
+      local child_device = findChild( lul_device, child_name )
+      if (child_device~=nil) then
+        -- iterate xml
+        local xpath_tmpl = "/data/".. child_name .. "/*"
+        debug(string.format("xpath=%s",xpath_tmpl))
+        local nodes = xpath.selectNodes(lomtab,xpath_tmpl)
+        for idx,xml in pairs(nodes) do
+          -- debug(string.format("idx:%s xml:%s",idx,json.encode(xml)))
+          -- if it is a simple string
+          if (type(xml[1]) == "string") then
+            setVariableIfChanged(WES_SERVICE, xml.tag, xml[1], child_device)
+          end
+        end
+      end
+    end
+  else
+    warning("Failed to decode the xml data. ignoring data")
   end
-
   return true
 end
 
